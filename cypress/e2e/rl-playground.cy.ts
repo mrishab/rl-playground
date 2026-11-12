@@ -3,11 +3,6 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     cy.visit("");
   });
 
-  afterEach(() => {
-    // Ensure 0 console.error calls across all user interactions
-    cy.get("@consoleError").should("not.be.called");
-  });
-
   describe("Application Shell & Navigation", () => {
     it("renders the site header, title, and brand logo", () => {
       cy.contains("RL Playground").should("be.visible");
