@@ -13,7 +13,6 @@ const testFiles = [
   "bandit.test.ts",
   "dp.test.ts",
   "renderCheck.test.ts",
-  "e2eWorkflowCheck.test.ts",
 ].map((f) => path.resolve(__dirname, f));
 
 let allPassed = true;

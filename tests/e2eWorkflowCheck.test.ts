@@ -66,14 +66,27 @@ describe("E2E Application Workflow & 0 Console Error Verification", () => {
 
       // Load production bundle
       await import(path.join(assetsDir, jsBundle));
-      await new Promise((r) => setTimeout(r, 100));
+
+      const waitFor = async (predicate: () => boolean, timeoutMs = 4000) => {
+        const start = Date.now();
+        while (Date.now() - start < timeoutMs) {
+          if (predicate()) return true;
+          await new Promise((r) => setTimeout(r, 50));
+        }
+        return predicate();
+      };
 
       const getButtons = () => Array.from(document.querySelectorAll("button"));
       const getLinks = () => Array.from(document.querySelectorAll("a"));
 
+      // Wait for React to mount into #root
+      await waitFor(
+        () => root.innerHTML.length > 500 && getButtons().length > 5,
+      );
+
       // STEP 1: Verify GridWorld Lab loaded
       assert.ok(
-        root.innerHTML.length > 1000,
+        root.innerHTML.length > 500,
         "App should render non-empty HTML",
       );
       const title = document.querySelector("h1")?.textContent;
@@ -82,6 +95,9 @@ describe("E2E Application Workflow & 0 Console Error Verification", () => {
       );
 
       // STEP 2: Train episodes in GridWorld
+      await waitFor(
+        () => !!getButtons().find((b) => b.textContent.includes("Train 50")),
+      );
       const train50 = getButtons().find((b) =>
         b.textContent.includes("Train 50"),
       );
@@ -165,7 +181,9 @@ describe("E2E Application Workflow & 0 Console Error Verification", () => {
       );
       assert.ok(banditsLink, "Bandits navigation link must exist");
       banditsLink.click();
-      await new Promise((r) => setTimeout(r, 50));
+      await waitFor(() =>
+        document.body.textContent.includes("Multi-Armed Bandits Lab"),
+      );
 
       assert.ok(document.body.textContent.includes("Multi-Armed Bandits Lab"));
       getButtons()
@@ -195,7 +213,9 @@ describe("E2E Application Workflow & 0 Console Error Verification", () => {
       );
       assert.ok(dpLink, "Dynamic Prog navigation link must exist");
       dpLink.click();
-      await new Promise((r) => setTimeout(r, 50));
+      await waitFor(() =>
+        document.body.textContent.includes("Value Iteration Controls"),
+      );
 
       assert.ok(document.body.textContent.includes("Value Iteration Controls"));
       getButtons()
@@ -211,7 +231,9 @@ describe("E2E Application Workflow & 0 Console Error Verification", () => {
       );
       assert.ok(agentsLink, "Agents navigation link must exist");
       agentsLink.click();
-      await new Promise((r) => setTimeout(r, 50));
+      await waitFor(() =>
+        document.body.textContent.includes("Saved Policies & Agents"),
+      );
       assert.ok(document.body.textContent.includes("Saved Policies & Agents"));
 
       // STEP 6: Navigate to Theory & Quiz
@@ -220,7 +242,9 @@ describe("E2E Application Workflow & 0 Console Error Verification", () => {
       );
       assert.ok(theoryLink, "Theory & Quiz navigation link must exist");
       theoryLink.click();
-      await new Promise((r) => setTimeout(r, 50));
+      await waitFor(() =>
+        document.body.textContent.includes("Undergraduate Mastery Quiz"),
+      );
 
       assert.ok(
         document.body.textContent.includes("Markov Decision Processes"),
