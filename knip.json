@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@5.30.6/schema.json",
+  "project": ["src/**/*.{ts,tsx}", "!src/lib/api/**"],
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": ["husky"]
+}
