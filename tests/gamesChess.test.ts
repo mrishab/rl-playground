@@ -37,10 +37,15 @@ describe("Tactical Chess RL Engine", () => {
 
   it("detects attacked squares correctly", () => {
     const engine = new ChessEngine();
-    // Square (1, 1) is not attacked by White initially, but (1, 0) or (1, 2) is attacked by pawn
+    // Square (1, 0) is attacked diagonally by White pawn at (2, 1) and Rook at (3, 0)
     const attacked = engine.isSquareAttacked(1, 0, "w");
-    // White pawn at (2, 1) attacks (1, 0) diagonally!
     assert.equal(attacked, true);
+
+    // Square (1, 3) is attacked diagonally by White pawn at (2, 2) and Knight at (3, 2)
+    assert.equal(engine.isSquareAttacked(1, 3, "w"), true);
+
+    // Square (0, 2) (Black Knight) is NOT attacked by White in the initial position
+    assert.equal(engine.isSquareAttacked(0, 2, "w"), false);
   });
 
   it("executes full adversarial step (White RL agent + Black AI)", () => {

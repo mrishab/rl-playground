@@ -1,4 +1,4 @@
-import { Play, Pause, StepForward, RotateCcw } from "lucide-react";
+import { Play, Pause, StepForward, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -6,6 +6,7 @@ type Props = {
   onTogglePlay: () => void;
   onStep: () => void;
   onReset: () => void;
+  onResetAll?: () => void;
 };
 
 export function GameRunButtons({
@@ -13,6 +14,7 @@ export function GameRunButtons({
   onTogglePlay,
   onStep,
   onReset,
+  onResetAll,
 }: Props) {
   return (
     <div className="flex items-center gap-1.5">
@@ -42,9 +44,21 @@ export function GameRunButtons({
         variant="ghost"
         className="h-8 gap-1 text-xs"
         onClick={onReset}
+        title="Reset Game Episode"
       >
         <RotateCcw className="h-3.5 w-3.5" /> Reset
       </Button>
+      {onResetAll && (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+          onClick={onResetAll}
+          title="Reset Q-Table"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      )}
     </div>
   );
 }

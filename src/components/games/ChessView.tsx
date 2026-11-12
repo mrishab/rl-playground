@@ -18,9 +18,17 @@ const SYMBOLS: Record<string, string> = {
 };
 
 export function ChessView({ state }: Props) {
+  const statusText = state.isOver
+    ? state.winner === "w"
+      ? "White Wins (Agent)"
+      : state.winner === "b"
+        ? "Black Wins (Opponent)"
+        : "Draw (Turn limit)"
+    : `Turn ${state.moveCount} (${state.turn === "w" ? "White" : "Black"})`;
+
   return (
-    <div className="relative w-full aspect-square max-w-[340px] mx-auto rounded-lg overflow-hidden border border-border bg-neutral-950 p-2 shadow-inner">
-      <div className="grid grid-cols-4 grid-rows-4 w-full h-full gap-1">
+    <div className="relative w-full aspect-square max-w-[340px] mx-auto rounded-lg overflow-hidden border border-border bg-neutral-950 p-2 shadow-inner flex flex-col justify-between">
+      <div className="grid grid-cols-4 grid-rows-4 w-full h-[88%] gap-1">
         {state.board.map((row, r) =>
           row.map((cell, c) => {
             const isLight = (r + c) % 2 === 0;
@@ -52,6 +60,23 @@ export function ChessView({ state }: Props) {
             );
           }),
         )}
+      </div>
+
+      {/* Sleek bottom status bar */}
+      <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground/90 pt-1 border-t border-border/40 px-1">
+        <span className="text-sky-400">
+          Agent (White ♔){" "}
+          {state.agentCaptures.length > 0 &&
+            `+${state.agentCaptures.map((t) => SYMBOLS[`b-${t}`]).join("")}`}
+        </span>
+        <span className="text-[9px] text-muted-foreground text-center truncate max-w-[120px]">
+          {statusText}
+        </span>
+        <span className="text-rose-400">
+          Opp (Black ♚){" "}
+          {state.opponentCaptures.length > 0 &&
+            `+${state.opponentCaptures.map((t) => SYMBOLS[`w-${t}`]).join("")}`}
+        </span>
       </div>
     </div>
   );

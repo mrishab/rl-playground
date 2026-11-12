@@ -106,20 +106,25 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
   stepSingle: () => {
     const { activeGame } = get();
     if (activeGame === "pong") {
-      const { reward } = pong.step();
+      const { reward, done } = pong.step();
       set((s) => {
         const m = s.metrics.pong;
         const newScore = pong.state.agentScore;
         const highScore = Math.max(m.highScore, newScore);
-        const wins = pong.state.agentScore;
-        const total = pong.state.agentScore + pong.state.opponentScore;
-        const winRate = total > 0 ? (wins / total) * 100 : 0;
+        const newEpisodes = done ? m.episodes + 1 : m.episodes;
+        const newWins = done && pong.state.ballX <= 0 ? m.wins + 1 : m.wins;
+        const newLosses =
+          done && pong.state.ballX >= pong.width ? m.losses + 1 : m.losses;
+        const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         return {
           pongState: { ...pong.state },
           metrics: {
             ...s.metrics,
             pong: {
               ...m,
+              episodes: newEpisodes,
+              wins: newWins,
+              losses: newLosses,
               score: newScore,
               highScore,
               winRate,
@@ -130,19 +135,27 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         };
       });
     } else if (activeGame === "pacman") {
-      const { reward } = pacman.step();
+      const { reward, done } = pacman.step();
       set((s) => {
         const m = s.metrics.pacman;
         const newScore = pacman.state.score;
         const highScore = Math.max(m.highScore, newScore);
+        const newEpisodes = done ? m.episodes + 1 : m.episodes;
+        const newWins = done && pacman.state.won ? m.wins + 1 : m.wins;
+        const newLosses = done && !pacman.state.won ? m.losses + 1 : m.losses;
+        const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         return {
           pacmanState: { ...pacman.state },
           metrics: {
             ...s.metrics,
             pacman: {
               ...m,
+              episodes: newEpisodes,
+              wins: newWins,
+              losses: newLosses,
               score: newScore,
               highScore,
+              winRate,
               recentRewards: [...m.recentRewards.slice(-19), reward],
               qTableSize: pacman.qTable.size,
             },
@@ -150,15 +163,31 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         };
       });
     } else if (activeGame === "chess") {
-      const { reward } = chess.step();
+      const { reward, done } = chess.step();
       set((s) => {
         const m = s.metrics.chess;
+        const newEpisodes = done ? m.episodes + 1 : m.episodes;
+        const newWins =
+          done && chess.state.winner === "w" ? m.wins + 1 : m.wins;
+        const newLosses =
+          done && chess.state.winner === "b" ? m.losses + 1 : m.losses;
+        const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
+        const newScore =
+          chess.state.agentCaptures.length * 15 +
+          (chess.state.winner === "w" ? 100 : 0);
+        const highScore = Math.max(m.highScore, newScore);
         return {
           chessState: { ...chess.state },
           metrics: {
             ...s.metrics,
             chess: {
               ...m,
+              episodes: newEpisodes,
+              wins: newWins,
+              losses: newLosses,
+              score: newScore,
+              highScore,
+              winRate,
               recentRewards: [...m.recentRewards.slice(-19), reward],
               qTableSize: chess.qTable.size,
             },
@@ -166,19 +195,31 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         };
       });
     } else {
-      const { reward } = strategy.step();
+      const { reward, done } = strategy.step();
       set((s) => {
         const m = s.metrics.strategy;
         const newScore = strategy.state.score;
         const highScore = Math.max(m.highScore, newScore);
+        const newEpisodes = done ? m.episodes + 1 : m.episodes;
+        const newWins =
+          done && strategy.state.winner === "agent" ? m.wins + 1 : m.wins;
+        const newLosses =
+          done && strategy.state.winner === "opponent"
+            ? m.losses + 1
+            : m.losses;
+        const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         return {
           strategyState: { ...strategy.state },
           metrics: {
             ...s.metrics,
             strategy: {
               ...m,
+              episodes: newEpisodes,
+              wins: newWins,
+              losses: newLosses,
               score: newScore,
               highScore,
+              winRate,
               recentRewards: [...m.recentRewards.slice(-19), reward],
               qTableSize: strategy.qTable.size,
             },
@@ -205,6 +246,8 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               episodes: totalEps,
               wins: totalWins,
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
+              score: pong.state.agentScore,
+              highScore: Math.max(m.highScore, pong.state.agentScore),
               avgReward:
                 (m.avgReward * m.episodes + res.avgReward * res.episodes) /
                 totalEps,
@@ -228,6 +271,8 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               episodes: totalEps,
               wins: totalWins,
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
+              score: pacman.state.score,
+              highScore: Math.max(m.highScore, pacman.state.score),
               avgReward:
                 (m.avgReward * m.episodes + res.avgReward * res.episodes) /
                 totalEps,
@@ -243,6 +288,9 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         const totalEps = m.episodes + res.episodes;
         const totalWins = m.wins + res.wins;
         const totalLosses = m.losses + res.losses;
+        const latestScore =
+          chess.state.agentCaptures.length * 15 +
+          (chess.state.winner === "w" ? 100 : 0);
         return {
           chessState: { ...chess.state },
           metrics: {
@@ -253,6 +301,8 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               wins: totalWins,
               losses: totalLosses,
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
+              score: latestScore,
+              highScore: Math.max(m.highScore, latestScore),
               avgReward:
                 (m.avgReward * m.episodes + res.avgReward * res.episodes) /
                 totalEps,
@@ -278,6 +328,8 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               wins: totalWins,
               losses: totalLosses,
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
+              score: strategy.state.score,
+              highScore: Math.max(m.highScore, strategy.state.score),
               avgReward:
                 (m.avgReward * m.episodes + res.avgReward * res.episodes) /
                 totalEps,

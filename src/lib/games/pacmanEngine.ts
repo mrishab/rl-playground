@@ -56,7 +56,7 @@ export class PacmanEngine {
           if (
             !powerPellets.has(key) &&
             !(r === 6 && c === 4) &&
-            !(r === 2 && c === 4)
+            !(r === 2 && (c === 4 || c === 5))
           ) {
             pellets.add(key);
           }
@@ -66,7 +66,7 @@ export class PacmanEngine {
 
     const ghosts: Ghost[] = [
       { id: "blinky", row: 2, col: 4, color: "#ef4444", isFrightened: false },
-      { id: "pinky", row: 3, col: 4, color: "#06b6d4", isFrightened: false },
+      { id: "pinky", row: 2, col: 5, color: "#06b6d4", isFrightened: false },
     ];
 
     return {
@@ -147,15 +147,18 @@ export class PacmanEngine {
     if (explore && Math.random() < this.hyperparams.explorationRate) {
       return Math.floor(Math.random() * 5);
     }
-    let best = 0;
-    let maxVal = q[0];
-    for (let a = 1; a < 5; a++) {
+    let maxVal = -Infinity;
+    const bestActions: number[] = [];
+    for (let a = 0; a < 5; a++) {
       if (q[a] > maxVal) {
         maxVal = q[a];
-        best = a;
+        bestActions.length = 0;
+        bestActions.push(a);
+      } else if (q[a] === maxVal) {
+        bestActions.push(a);
       }
     }
-    return best;
+    return bestActions[Math.floor(Math.random() * bestActions.length)];
   }
 
   getLegalMoves(r: number, c: number): [number, number][] {

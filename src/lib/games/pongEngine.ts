@@ -97,15 +97,18 @@ export class PongEngine {
     if (explore && Math.random() < this.hyperparams.explorationRate) {
       return Math.floor(Math.random() * 3);
     }
-    let best = 0;
-    let maxVal = q[0];
-    for (let a = 1; a < 3; a++) {
+    let maxVal = -Infinity;
+    const bestActions: number[] = [];
+    for (let a = 0; a < 3; a++) {
       if (q[a] > maxVal) {
         maxVal = q[a];
-        best = a;
+        bestActions.length = 0;
+        bestActions.push(a);
+      } else if (q[a] === maxVal) {
+        bestActions.push(a);
       }
     }
-    return best;
+    return bestActions[Math.floor(Math.random() * bestActions.length)];
   }
 
   step(actionOverride?: number): { reward: number; done: boolean } {

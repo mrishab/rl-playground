@@ -101,4 +101,71 @@ describe("Tactical Grid Strategy RL Engine", () => {
     assert.equal(engine.qTable.size, 0);
     assert.equal(engine.state.turn, 0);
   });
+
+  it("resolves turn limit correctly for symmetric HP advantages and draws", () => {
+    // Case 1: Equal nodes, Opponent has higher HP -> Opponent wins
+    const engine1 = new StrategyEngine();
+    engine1.state.turn = 59;
+    engine1.state.nodes[0].owner = "agent";
+    engine1.state.nodes[1].owner = "opponent";
+    engine1.state.agent.health = 40;
+    engine1.state.opponent.health = 80;
+    // Keep units apart so opponent doesn't attack
+    engine1.state.agent.row = 5;
+    engine1.state.agent.col = 0;
+    engine1.state.opponent.row = 0;
+    engine1.state.opponent.col = 5;
+
+    engine1.step(0);
+    assert.equal(engine1.state.isOver, true);
+    assert.equal(engine1.state.winner, "opponent");
+
+    // Case 2: Equal nodes, Agent has higher HP -> Agent wins
+    const engine2 = new StrategyEngine();
+    engine2.state.turn = 59;
+    engine2.state.nodes[0].owner = "agent";
+    engine2.state.nodes[1].owner = "opponent";
+    engine2.state.agent.health = 90;
+    engine2.state.opponent.health = 30;
+    engine2.state.agent.row = 5;
+    engine2.state.agent.col = 0;
+    engine2.state.opponent.row = 0;
+    engine2.state.opponent.col = 5;
+
+    engine2.step(0);
+    assert.equal(engine2.state.isOver, true);
+    assert.equal(engine2.state.winner, "agent");
+
+    // Case 3: Equal nodes, Equal HP -> Draw
+    const engine3 = new StrategyEngine();
+    engine3.state.turn = 59;
+    engine3.state.nodes[0].owner = "agent";
+    engine3.state.nodes[1].owner = "opponent";
+    engine3.state.agent.health = 70;
+    engine3.state.opponent.health = 70;
+    engine3.state.agent.row = 5;
+    engine3.state.agent.col = 0;
+    engine3.state.opponent.row = 0;
+    engine3.state.opponent.col = 5;
+
+    engine3.step(0);
+    assert.equal(engine3.state.isOver, true);
+    assert.equal(engine3.state.winner, "draw");
+  });
+
+  it("breaks ties among maximizing actions uniformly at random", () => {
+    const engine = new StrategyEngine({ explorationRate: 0 });
+    const counts = new Array(6).fill(0);
+    const key = engine.getStateKey(engine.state);
+
+    // Call selectAction 100 times on fresh state
+    for (let i = 0; i < 100; i++) {
+      const act = engine.selectAction(key, false);
+      counts[act]++;
+    }
+
+    // Should not all be action 0 (multiple actions chosen)
+    const distinctActions = counts.filter((c) => c > 0).length;
+    assert.ok(distinctActions > 1, `Expected multiple actions, got: ${counts}`);
+  });
 });

@@ -9,6 +9,7 @@ type Props = {
   onStep: () => void;
   onTrain: (count: number) => void;
   onReset: () => void;
+  onResetAll?: () => void;
   onSetSpeed: (speed: 1 | 2 | 5) => void;
 };
 
@@ -19,6 +20,7 @@ export function GameControlsRow({
   onStep,
   onTrain,
   onReset,
+  onResetAll,
   onSetSpeed,
 }: Props) {
   return (
@@ -28,6 +30,7 @@ export function GameControlsRow({
         onTogglePlay={onTogglePlay}
         onStep={onStep}
         onReset={onReset}
+        onResetAll={onResetAll}
       />
       <div className="flex items-center gap-1.5">
         <GameSpeedSelector speed={speed} onSetSpeed={onSetSpeed} />

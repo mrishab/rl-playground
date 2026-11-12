@@ -248,7 +248,25 @@ export class ChessEngine {
     board = this.state.board,
   ): boolean {
     const oppMoves = this.getLegalMoves(byColor, board);
-    return oppMoves.some((m) => m.to[0] === r && m.to[1] === c);
+    if (
+      oppMoves.some(
+        (m) => m.piece.type !== "P" && m.to[0] === r && m.to[1] === c,
+      )
+    ) {
+      return true;
+    }
+    const fwd = byColor === "w" ? -1 : 1;
+    for (let pr = 0; pr < 4; pr++) {
+      for (let pc = 0; pc < 4; pc++) {
+        const piece = board[pr][pc];
+        if (piece && piece.color === byColor && piece.type === "P") {
+          if (r === pr + fwd && (c === pc - 1 || c === pc + 1)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   classifyMove(move: ChessMove): number {
@@ -345,7 +363,7 @@ export class ChessEngine {
       return legalMoves[Math.floor(Math.random() * legalMoves.length)];
     }
 
-    let bestMove = legalMoves[0];
+    const bestMoves: ChessMove[] = [];
     let maxVal = -Infinity;
 
     for (const m of legalMoves) {
@@ -353,11 +371,14 @@ export class ChessEngine {
       const val = q[cat];
       if (val > maxVal) {
         maxVal = val;
-        bestMove = m;
+        bestMoves.length = 0;
+        bestMoves.push(m);
+      } else if (val === maxVal) {
+        bestMoves.push(m);
       }
     }
 
-    return bestMove;
+    return bestMoves[Math.floor(Math.random() * bestMoves.length)];
   }
 
   applyMove(move: ChessMove): void {

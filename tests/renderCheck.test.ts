@@ -242,6 +242,21 @@ describe("Application State & Action Workflows with Zero Errors", () => {
       store.resetAll();
       assert.equal(useGamesStore.getState().metrics.chess.episodes, 0);
 
+      // Verify stepSingle increments episodes on game over
+      store.setActiveGame("strategy");
+      store.resetAll();
+      const prevEps = useGamesStore.getState().metrics.strategy.episodes;
+      // Step until episode finishes or 70 steps
+      for (let i = 0; i < 70; i++) {
+        store.stepSingle();
+        if (useGamesStore.getState().strategyState.isOver) break;
+      }
+      assert.ok(useGamesStore.getState().strategyState.isOver);
+      assert.ok(
+        useGamesStore.getState().metrics.strategy.episodes > prevEps,
+        "Expected stepSingle to increment episode count on completion",
+      );
+
       assert.equal(
         errorLogs.length,
         0,

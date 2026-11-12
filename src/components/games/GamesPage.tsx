@@ -27,6 +27,7 @@ export function GamesPage() {
             onStep={p.stepSingle}
             onTrain={p.trainBatch}
             onReset={p.resetEpisode}
+            onResetAll={p.resetAll}
             onSetSpeed={p.setSpeed}
           />
 

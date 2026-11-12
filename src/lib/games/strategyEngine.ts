@@ -148,15 +148,18 @@ export class StrategyEngine {
     if (explore && Math.random() < this.hyperparams.explorationRate) {
       return Math.floor(Math.random() * 6);
     }
-    let best = 0;
-    let maxVal = q[0];
-    for (let a = 1; a < 6; a++) {
+    let maxVal = -Infinity;
+    const bestActions: number[] = [];
+    for (let a = 0; a < 6; a++) {
       if (q[a] > maxVal) {
         maxVal = q[a];
-        best = a;
+        bestActions.length = 0;
+        bestActions.push(a);
+      } else if (q[a] === maxVal) {
+        bestActions.push(a);
       }
     }
-    return best;
+    return bestActions[Math.floor(Math.random() * bestActions.length)];
   }
 
   executeOpponentAI(): void {
@@ -325,11 +328,13 @@ export class StrategyEngine {
       }
     }
 
-    // Node holding passive points
-    for (const node of s.nodes) {
-      if (node.owner === "agent") {
-        s.score += 1;
-        reward += 0.5;
+    if (!done) {
+      // Node holding passive points
+      for (const node of s.nodes) {
+        if (node.owner === "agent") {
+          s.score += 1;
+          reward += 0.5;
+        }
       }
     }
 
@@ -345,7 +350,10 @@ export class StrategyEngine {
       ) {
         s.winner = "agent";
         reward += 25.0;
-      } else if (oppNodes > agentNodes) {
+      } else if (
+        oppNodes > agentNodes ||
+        (agentNodes === oppNodes && s.opponent.health > s.agent.health)
+      ) {
         s.winner = "opponent";
         reward -= 25.0;
       } else {
