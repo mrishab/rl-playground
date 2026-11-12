@@ -76,9 +76,7 @@ export type RLStoreState = {
   stepSingleTransition: () => void;
   setSimulating: (simulating: boolean) => void;
   toggleShowBFSPath: () => void;
-  toggleLayer: (
-    layer: "heatmap" | "arrows" | "qrose" | "visits",
-  ) => void;
+  toggleLayer: (layer: "heatmap" | "arrows" | "qrose" | "visits") => void;
   setInspectedCell: (cell: [number, number] | null) => void;
   resetQTable: () => void;
   resetEnvironment: () => void;
@@ -297,7 +295,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
 
     removeSmartObstacle: (id) => {
       set((s) => {
-        const updatedInitial = s.initialSmartObstacles.filter((o) => o.id !== id);
+        const updatedInitial = s.initialSmartObstacles.filter(
+          (o) => o.id !== id,
+        );
         const bfsResult = simulateBFSAgainstObstacles(
           s.gridSize,
           s.startPos,
@@ -331,7 +331,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           obstacles: s.obstacles.filter(([or, oc]) => !(or === r && oc === c)),
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
-          smartObstacles: s.smartObstacles.filter((o) => !(o.r === r && o.c === c)),
+          smartObstacles: s.smartObstacles.filter(
+            (o) => !(o.r === r && o.c === c),
+          ),
           initialSmartObstacles: s.initialSmartObstacles.filter(
             (o) => !(o.r === r && o.c === c),
           ),
@@ -355,7 +357,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           obstacles: s.obstacles.filter(([or, oc]) => !(or === r && oc === c)),
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
-          smartObstacles: s.smartObstacles.filter((o) => !(o.r === r && o.c === c)),
+          smartObstacles: s.smartObstacles.filter(
+            (o) => !(o.r === r && o.c === c),
+          ),
           initialSmartObstacles: s.initialSmartObstacles.filter(
             (o) => !(o.r === r && o.c === c),
           ),
@@ -425,7 +429,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         const nextInitial = s.initialSmartObstacles.filter(
           (o) => !(o.r === r && o.c === c),
         );
-        const nextObs = s.obstacles.filter(([or, oc]) => !(or === r && oc === c));
+        const nextObs = s.obstacles.filter(
+          ([or, oc]) => !(or === r && oc === c),
+        );
         const bfsResult = simulateBFSAgainstObstacles(
           s.gridSize,
           s.startPos,
@@ -454,7 +460,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           obstacles: s.obstacles.filter(([or, oc]) => !(or === r && oc === c)),
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
-          smartObstacles: s.smartObstacles.filter((o) => !(o.r === r && o.c === c)),
+          smartObstacles: s.smartObstacles.filter(
+            (o) => !(o.r === r && o.c === c),
+          ),
           initialSmartObstacles: s.initialSmartObstacles.filter(
             (o) => !(o.r === r && o.c === c),
           ),
@@ -505,7 +513,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           hazards: s.hazards.filter(([hr, hc]) => !(hr === r && hc === c)),
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
-          smartObstacles: s.smartObstacles.filter((o) => !(o.r === r && o.c === c)),
+          smartObstacles: s.smartObstacles.filter(
+            (o) => !(o.r === r && o.c === c),
+          ),
           initialSmartObstacles: s.initialSmartObstacles.filter(
             (o) => !(o.r === r && o.c === c),
           ),
@@ -634,10 +644,13 @@ export const useRLStore = create<RLStoreState>((set, get) => {
 
     toggleLayer: (layer) => {
       set((s) => {
-        if (layer === "heatmap") return { showValueHeatmap: !s.showValueHeatmap };
-        if (layer === "arrows") return { showPolicyArrows: !s.showPolicyArrows };
+        if (layer === "heatmap")
+          return { showValueHeatmap: !s.showValueHeatmap };
+        if (layer === "arrows")
+          return { showPolicyArrows: !s.showPolicyArrows };
         if (layer === "qrose") return { showQRose: !s.showQRose };
-        if (layer === "visits") return { showVisitHeatmap: !s.showVisitHeatmap };
+        if (layer === "visits")
+          return { showVisitHeatmap: !s.showVisitHeatmap };
         return {};
       });
     },
@@ -764,7 +777,10 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           [1, 2],
           [1, 3],
         ];
-        hazards = [[3, 1], [3, 2]];
+        hazards = [
+          [3, 1],
+          [3, 2],
+        ];
         obstacles = [[2, 2]];
         rules = {
           ...rules,

@@ -30,6 +30,7 @@ export function RLGridCells({ store, tool }: Props) {
 
   return (
     <div
+      data-testid="grid-canvas-cells"
       className="grid gap-1.5 w-full max-w-md mx-auto"
       style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
     >
@@ -71,7 +72,7 @@ export function RLGridCells({ store, tool }: Props) {
               if (tool === "inspect") {
                 setInspectedCell(isInspected ? null : [r, c]);
               } else {
-                toggleCell(r, c, tool as any);
+                toggleCell(r, c, tool);
               }
             }}
           />

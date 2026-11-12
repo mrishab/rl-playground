@@ -29,7 +29,9 @@ export function RLCellContent(props: RLCellProps) {
       )}
       {isGoal && <Trophy className="h-5 w-5 animate-bounce text-primary" />}
       {isHazard && <Flame className="h-5 w-5 text-destructive" />}
-      {isMud && <Droplets className="h-4 w-4 text-amber-600 dark:text-amber-400" />}
+      {isMud && (
+        <Droplets className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      )}
       {isIce && <Snowflake className="h-4 w-4 text-cyan-500 animate-pulse" />}
       {smartObstacle && !isAgent && (
         <RLGhostBadge strategy={smartObstacle.strategy} />

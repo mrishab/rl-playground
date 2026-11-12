@@ -50,6 +50,10 @@ export default defineConfig(() => ({
     host: true,
     port: 3000,
   },
+  preview: {
+    host: true,
+    port: 3000,
+  },
   build: {
     target: "ES2020",
     chunkSizeWarningLimit: 15000,

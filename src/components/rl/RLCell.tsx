@@ -8,6 +8,8 @@ type Props = RLCellProps & {
 
 export function RLCell(props: Props) {
   const {
+    r,
+    c,
     isObstacle,
     isHazard,
     isGoal,
@@ -25,6 +27,7 @@ export function RLCell(props: Props) {
   return (
     <button
       type="button"
+      data-testid={`grid-cell-${r}-${c}`}
       onClick={onClick}
       className={cn(
         "relative aspect-square rounded-md border flex items-center justify-center transition-all cursor-pointer select-none",

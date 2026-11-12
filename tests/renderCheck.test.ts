@@ -7,9 +7,9 @@ import { useSavedAgentsStore } from "../src/stores/savedAgentsStore.ts";
 
 describe("Application State & Action Workflows with Zero Errors", () => {
   it("interacts with GridWorld lab without console errors", () => {
-    const errorLogs: any[] = [];
+    const errorLogs: unknown[] = [];
     const origError = console.error;
-    console.error = (...args: any[]) => {
+    console.error = (...args: unknown[]) => {
       errorLogs.push(args);
       origError(...args);
     };
@@ -95,26 +95,34 @@ describe("Application State & Action Workflows with Zero Errors", () => {
       assert.ok(exportedJson.includes("Test Q-Agent"));
       useSavedAgentsStore.getState().deleteAgent(saved.id);
 
-      const importedCount = useSavedAgentsStore.getState().importAgents(exportedJson);
+      const importedCount = useSavedAgentsStore
+        .getState()
+        .importAgents(exportedJson);
       assert.ok(importedCount >= 1);
 
       // Assert ZERO console errors occurred
-      assert.equal(errorLogs.length, 0, "Expected 0 console errors during interaction");
+      assert.equal(
+        errorLogs.length,
+        0,
+        "Expected 0 console errors during interaction",
+      );
     } finally {
       console.error = origError;
     }
   });
 
   it("interacts with Bandit lab without console errors", () => {
-    const errorLogs: any[] = [];
+    const errorLogs: unknown[] = [];
     const origError = console.error;
-    console.error = (...args: any[]) => {
+    console.error = (...args: unknown[]) => {
       errorLogs.push(args);
       origError(...args);
     };
 
     try {
-      useBanditStore.getState().setConfig({ algorithm: "epsilon-greedy", epsilon: 0.1 });
+      useBanditStore
+        .getState()
+        .setConfig({ algorithm: "epsilon-greedy", epsilon: 0.1 });
       useBanditStore.getState().step();
       useBanditStore.getState().stepBatch(20);
       assert.equal(useBanditStore.getState().stepCount, 21);
@@ -127,23 +135,29 @@ describe("Application State & Action Workflows with Zero Errors", () => {
       useBanditStore.getState().stepBatch(20);
       assert.equal(useBanditStore.getState().stepCount, 20);
 
-      useBanditStore.getState().setConfig({ algorithm: "optimistic-initial", initialQ: 5.0 });
+      useBanditStore
+        .getState()
+        .setConfig({ algorithm: "optimistic-initial", initialQ: 5.0 });
       useBanditStore.getState().stepBatch(20);
       assert.equal(useBanditStore.getState().stepCount, 20);
 
       useBanditStore.getState().reset();
       assert.equal(useBanditStore.getState().stepCount, 0);
 
-      assert.equal(errorLogs.length, 0, "Expected 0 console errors in Bandit lab");
+      assert.equal(
+        errorLogs.length,
+        0,
+        "Expected 0 console errors in Bandit lab",
+      );
     } finally {
       console.error = origError;
     }
   });
 
   it("interacts with Dynamic Programming lab without console errors", () => {
-    const errorLogs: any[] = [];
+    const errorLogs: unknown[] = [];
     const origError = console.error;
-    console.error = (...args: any[]) => {
+    console.error = (...args: unknown[]) => {
       errorLogs.push(args);
       origError(...args);
     };

@@ -40,11 +40,18 @@ export function RLControlsCard({
       <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <CardTitle className="text-base">Policy & Learning Controls</CardTitle>
         <div className="flex items-center gap-1.5">
-          <label htmlFor="rl-algorithm-select" className="text-xs text-muted-foreground">Algo:</label>
+          <label
+            htmlFor="rl-algorithm-select"
+            className="text-xs text-muted-foreground"
+          >
+            Algo:
+          </label>
           <select
             id="rl-algorithm-select"
             value={params.algorithm}
-            onChange={(e) => onChange({ algorithm: e.target.value as RLAlgorithm })}
+            onChange={(e) =>
+              onChange({ algorithm: e.target.value as RLAlgorithm })
+            }
             className="text-xs rounded-md border border-input bg-background px-2 py-1 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-medium"
           >
             {ALGORITHMS.map((algo) => (

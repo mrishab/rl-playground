@@ -12,11 +12,37 @@ export function SiteHeader() {
   const { pathname } = useLocation();
 
   const navLinks = [
-    { to: "/gridworld", label: "GridWorld", icon: Grid3X3, match: (p: string) => p === "/" || p.startsWith("/gridworld") || p.startsWith("/rl") },
-    { to: "/bandits", label: "Bandits", icon: Target, match: (p: string) => p.startsWith("/bandits") },
-    { to: "/dp", label: "Dynamic Prog", icon: GitCommit, match: (p: string) => p.startsWith("/dp") },
-    { to: "/agents", label: "Agents", icon: Cpu, match: (p: string) => p.startsWith("/agents") || p.startsWith("/models") },
-    { to: "/theory", label: "Theory & Quiz", icon: BookOpen, match: (p: string) => p.startsWith("/theory") },
+    {
+      to: "/gridworld",
+      label: "GridWorld",
+      icon: Grid3X3,
+      match: (p: string) =>
+        p === "/" || p.startsWith("/gridworld") || p.startsWith("/rl"),
+    },
+    {
+      to: "/bandits",
+      label: "Bandits",
+      icon: Target,
+      match: (p: string) => p.startsWith("/bandits"),
+    },
+    {
+      to: "/dp",
+      label: "Dynamic Prog",
+      icon: GitCommit,
+      match: (p: string) => p.startsWith("/dp"),
+    },
+    {
+      to: "/agents",
+      label: "Agents",
+      icon: Cpu,
+      match: (p: string) => p.startsWith("/agents") || p.startsWith("/models"),
+    },
+    {
+      to: "/theory",
+      label: "Theory & Quiz",
+      icon: BookOpen,
+      match: (p: string) => p.startsWith("/theory"),
+    },
   ];
 
   return (
@@ -35,7 +61,10 @@ export function SiteHeader() {
         <HeaderBreadcrumbs />
 
         {/* Center Nav */}
-        <nav className="hidden md:flex items-center gap-1 ml-4" aria-label="Main Navigation">
+        <nav
+          className="hidden md:flex items-center gap-1 ml-4"
+          aria-label="Main Navigation"
+        >
           {navLinks.map(({ to, label, icon: Icon, match }) => {
             const active = match(pathname);
             return (

@@ -2,7 +2,8 @@ import { defineConfig } from "cypress";
 
 export default defineConfig({
   e2e: {
-    baseUrl: "http://localhost:3000/RL-Playground",
+    baseUrl:
+      process.env.CYPRESS_BASE_URL || "http://localhost:3000/RL-Playground/",
     specPattern: "cypress/e2e/**/*.cy.{js,jsx,ts,tsx}",
     supportFile: "cypress/support/e2e.ts",
     viewportWidth: 1280,

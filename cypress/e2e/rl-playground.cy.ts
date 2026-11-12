@@ -1,7 +1,7 @@
 describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
   beforeEach(() => {
     // Intercept and assert 0 console errors
-    cy.visit("/", {
+    cy.visit("", {
       onBeforeLoad(win) {
         cy.spy(win.console, "error").as("consoleError");
       },
@@ -62,7 +62,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
   describe("GridWorld Lab - Interactive Environment & Algorithms", () => {
     beforeEach(() => {
-      cy.visit("/gridworld");
+      cy.visit("gridworld");
     });
 
     it("switches environment presets: Cliff Walking, Frozen Lake, and Maze", () => {
@@ -149,33 +149,42 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     it("supports cell inspection showing Bellman arithmetic", () => {
       cy.contains("button", "Inspect").click();
       // Click a grid cell
-      cy.get(".grid button").eq(6).click();
+      cy.get("[data-testid='grid-canvas-cells'] button").eq(6).click();
       cy.contains("State (1, 1): V*(s) =").should("be.visible");
     });
 
     it("paints obstacles, hazards, mud, and ice on the grid", () => {
       cy.contains("button", "Pit").click();
-      cy.get(".grid button").eq(7).click();
+      cy.get("[data-testid='grid-canvas-cells'] button").eq(7).click();
 
       cy.contains("button", "Wall").click();
-      cy.get(".grid button").eq(8).click();
+      cy.get("[data-testid='grid-canvas-cells'] button").eq(8).click();
 
       cy.contains("button", "Mud").click();
-      cy.get(".grid button").eq(12).click();
+      cy.get("[data-testid='grid-canvas-cells'] button").eq(12).click();
 
       cy.contains("button", "Ice").click();
-      cy.get(".grid button").eq(13).click();
+      cy.get("[data-testid='grid-canvas-cells'] button").eq(13).click();
     });
 
     it("adjusts grid dimension", () => {
       cy.contains("button", "4x4").click();
-      cy.get(".grid button").should("have.length", 16);
+      cy.get("[data-testid='grid-canvas-cells'] button").should(
+        "have.length",
+        16,
+      );
 
       cy.contains("button", "6x6").click();
-      cy.get(".grid button").should("have.length", 36);
+      cy.get("[data-testid='grid-canvas-cells'] button").should(
+        "have.length",
+        36,
+      );
 
       cy.contains("button", "5x5").click();
-      cy.get(".grid button").should("have.length", 25);
+      cy.get("[data-testid='grid-canvas-cells'] button").should(
+        "have.length",
+        25,
+      );
     });
 
     it("saves trained agent policy to Saved Agents", () => {
@@ -193,7 +202,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
   describe("Multi-Armed Bandits Lab", () => {
     beforeEach(() => {
-      cy.visit("/bandits");
+      cy.visit("bandits");
     });
 
     it("renders 10 arms testbed with values and pull counts", () => {
@@ -203,14 +212,14 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     });
 
     it("switches bandit algorithms and adjusts sliders", () => {
-      cy.get("select").select("ucb1");
+      cy.get("select#bandit-algorithm-select").select("ucb1");
       cy.contains("UCB Exploration Confidence (c)").should("be.visible");
 
-      cy.get("select").select("optimistic-initial");
+      cy.get("select#bandit-algorithm-select").select("optimistic-initial");
       cy.contains("Initial Q-Value (Q₀)").should("be.visible");
 
-      cy.get("select").select("thompson-sampling");
-      cy.get("select").select("epsilon-greedy");
+      cy.get("select#bandit-algorithm-select").select("thompson-sampling");
+      cy.get("select#bandit-algorithm-select").select("epsilon-greedy");
     });
 
     it("steps bandit simulations and updates average reward", () => {
@@ -231,7 +240,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
   describe("Dynamic Programming (Value Iteration) Lab", () => {
     beforeEach(() => {
-      cy.visit("/dp");
+      cy.visit("dp");
     });
 
     it("renders state values and derived policy", () => {
@@ -249,14 +258,14 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
     it("inspects state Bellman equation breakdown", () => {
       cy.contains("button", "Step 1 Sweep").click();
-      cy.get(".grid button").eq(0).click();
+      cy.get("[data-testid='dp-grid-cells'] button").eq(0).click();
       cy.contains("Mathematical Inspector: State").should("be.visible");
     });
   });
 
   describe("Saved Policies & Agents Management", () => {
     beforeEach(() => {
-      cy.visit("/agents");
+      cy.visit("agents");
     });
 
     it("renders saved agents page and search bar", () => {
@@ -271,7 +280,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
   describe("Theory & Undergrad Learning Guide with Quiz", () => {
     beforeEach(() => {
-      cy.visit("/theory");
+      cy.visit("theory");
     });
 
     it("renders core RL concepts: MDP, Bellman Equations, SARSA vs Q-Learning, Bandits", () => {

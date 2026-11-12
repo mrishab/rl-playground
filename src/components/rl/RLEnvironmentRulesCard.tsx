@@ -32,7 +32,9 @@ export function RLEnvironmentRulesCard({
     <Card>
       <CardHeader className="pb-3 flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Environment & Classic Presets</CardTitle>
+          <CardTitle className="text-base">
+            Environment & Classic Presets
+          </CardTitle>
           {gridSize && onSetGridSize && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>Grid:</span>

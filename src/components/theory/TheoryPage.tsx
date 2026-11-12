@@ -28,7 +28,8 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 2,
-    question: "Why does SARSA choose a safer path than Q-Learning in the Cliff Walking experiment?",
+    question:
+      "Why does SARSA choose a safer path than Q-Learning in the Cliff Walking experiment?",
     options: [
       "SARSA has a lower learning rate.",
       "SARSA accounts for epsilon-greedy exploration mistakes during training, penalizing paths close to the cliff edge.",
@@ -41,7 +42,8 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 3,
-    question: "What causes 'Maximization Bias' in standard Q-Learning, and how does Double Q-Learning address it?",
+    question:
+      "What causes 'Maximization Bias' in standard Q-Learning, and how does Double Q-Learning address it?",
     options: [
       "Maximization bias occurs because rewards are bounded; Double Q-Learning removes the reward bounds.",
       "Maximization bias arises from using the same values to select and evaluate an action (E[max(X, Y)] >= max(E[X], E[Y])); Double Q-learning decouples selection and evaluation using two separate tables.",
@@ -54,7 +56,8 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 4,
-    question: "In the Multi-Armed Bandit problem, what is the key concept behind Upper Confidence Bound (UCB)?",
+    question:
+      "In the Multi-Armed Bandit problem, what is the key concept behind Upper Confidence Bound (UCB)?",
     options: [
       "Only pull the arm with the highest sample mean.",
       "Optimism in the face of uncertainty: arms pulled fewer times receive an exploration bonus proportional to √(ln t / N(a)).",
@@ -67,7 +70,8 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 5,
-    question: "What is required by Dynamic Programming algorithms (Value Iteration) that is NOT required by Model-Free RL (Q-Learning)?",
+    question:
+      "What is required by Dynamic Programming algorithms (Value Iteration) that is NOT required by Model-Free RL (Q-Learning)?",
     options: [
       "A neural network function approximator.",
       "Full knowledge of the environment transition dynamics P(s'|s,a) and reward function R(s,a).",
@@ -81,7 +85,9 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
 ];
 
 export function TheoryPage() {
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<number, number>
+  >({});
   const [submitted, setSubmitted] = useState(false);
 
   const handleSelectOption = (questionId: number, optionIdx: number) => {
@@ -122,17 +128,31 @@ export function TheoryPage() {
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-2">
               <p>
-                An MDP formalizes sequential decision making under uncertainty as a 5-tuple:
+                An MDP formalizes sequential decision making under uncertainty
+                as a 5-tuple:
               </p>
               <div className="p-2 bg-muted/40 rounded font-mono text-[11px] text-foreground">
                 (S, A, P, R, γ)
               </div>
               <ul className="list-disc list-inside space-y-1">
-                <li><strong>S:</strong> Set of all valid environment states.</li>
-                <li><strong>A:</strong> Set of all available actions.</li>
-                <li><strong>P(s&apos;|s, a):</strong> Transition probability from state s to s&apos; given action a.</li>
-                <li><strong>R(s, a, s&apos;):</strong> Reward received after taking action a in s and reaching s&apos;.</li>
-                <li><strong>γ ∈ [0, 1):</strong> Discount factor for future rewards.</li>
+                <li>
+                  <strong>S:</strong> Set of all valid environment states.
+                </li>
+                <li>
+                  <strong>A:</strong> Set of all available actions.
+                </li>
+                <li>
+                  <strong>P(s&apos;|s, a):</strong> Transition probability from
+                  state s to s&apos; given action a.
+                </li>
+                <li>
+                  <strong>R(s, a, s&apos;):</strong> Reward received after
+                  taking action a in s and reaching s&apos;.
+                </li>
+                <li>
+                  <strong>γ ∈ [0, 1):</strong> Discount factor for future
+                  rewards.
+                </li>
               </ul>
             </CardContent>
           </Card>
@@ -147,14 +167,20 @@ export function TheoryPage() {
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-2">
               <p>
-                The cornerstone of RL is expressing the value of a state recursively in terms of future states:
+                The cornerstone of RL is expressing the value of a state
+                recursively in terms of future states:
               </p>
               <div className="p-2 bg-muted/40 rounded font-mono text-[11px] text-foreground space-y-1">
                 <div>V*(s) = max_a Σ P(s&apos;|s, a) [R + γ V*(s&apos;)]</div>
-                <div>Q*(s, a) = Σ P(s&apos;|s, a) [R + γ max_a&apos; Q*(s&apos;, a&apos;)]</div>
+                <div>
+                  Q*(s, a) = Σ P(s&apos;|s, a) [R + γ max_a&apos; Q*(s&apos;,
+                  a&apos;)]
+                </div>
               </div>
               <p>
-                Dynamic programming solves these equations directly, while Temporal Difference methods update iteratively from sampled transitions.
+                Dynamic programming solves these equations directly, while
+                Temporal Difference methods update iteratively from sampled
+                transitions.
               </p>
             </CardContent>
           </Card>
@@ -168,15 +194,23 @@ export function TheoryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-2">
-              <p>Both are model-free TD control methods with different backup targets:</p>
+              <p>
+                Both are model-free TD control methods with different backup
+                targets:
+              </p>
               <div className="space-y-1.5">
                 <div className="p-2 bg-muted/40 rounded font-mono text-[11px] text-foreground">
                   <strong>Q-Learning (Off-Policy):</strong>
-                  <div>Q(s, a) ← Q(s, a) + α [R + γ max_a&apos; Q(s&apos;, a&apos;) - Q(s, a)]</div>
+                  <div>
+                    Q(s, a) ← Q(s, a) + α [R + γ max_a&apos; Q(s&apos;, a&apos;)
+                    - Q(s, a)]
+                  </div>
                 </div>
                 <div className="p-2 bg-muted/40 rounded font-mono text-[11px] text-foreground">
                   <strong>SARSA (On-Policy):</strong>
-                  <div>Q(s, a) ← Q(s, a) + α [R + γ Q(s&apos;, a&apos;) - Q(s, a)]</div>
+                  <div>
+                    Q(s, a) ← Q(s, a) + α [R + γ Q(s&apos;, a&apos;) - Q(s, a)]
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -192,13 +226,16 @@ export function TheoryPage() {
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-2">
               <p>
-                In non-associative learning, selecting the optimal arm requires balancing sample averages with uncertainty:
+                In non-associative learning, selecting the optimal arm requires
+                balancing sample averages with uncertainty:
               </p>
               <div className="p-2 bg-muted/40 rounded font-mono text-[11px] text-foreground">
                 A_t = argmax_a [ Q_t(a) + c √(ln t / N_t(a)) ]
               </div>
               <p>
-                Arms with few pulls N(a) receive an exploration bonus, ensuring all arms are explored sufficiently while exploiting the best known.
+                Arms with few pulls N(a) receive an exploration bonus, ensuring
+                all arms are explored sufficiently while exploiting the best
+                known.
               </p>
             </CardContent>
           </Card>
@@ -208,7 +245,9 @@ export function TheoryPage() {
         <Card className="border-primary/30">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-base">Undergraduate Mastery Quiz</CardTitle>
+              <CardTitle className="text-base">
+                Undergraduate Mastery Quiz
+              </CardTitle>
               <p className="text-xs text-muted-foreground">
                 Test your conceptual understanding of core RL fundamentals.
               </p>
@@ -236,7 +275,10 @@ export function TheoryPage() {
               const isCorrect = selectedOpt === q.correctIndex;
 
               return (
-                <div key={q.id} className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
+                <div
+                  key={q.id}
+                  className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0"
+                >
                   <div className="flex items-start gap-2">
                     <span className="font-mono text-xs font-bold bg-muted px-1.5 py-0.5 rounded">
                       Q{idx + 1}
@@ -279,7 +321,9 @@ export function TheoryPage() {
 
                   {submitted && (
                     <div className="pl-6 pt-1 text-[11px] text-muted-foreground">
-                      <span className="font-semibold text-foreground">Explanation: </span>
+                      <span className="font-semibold text-foreground">
+                        Explanation:{" "}
+                      </span>
                       {q.explanation}
                     </div>
                   )}

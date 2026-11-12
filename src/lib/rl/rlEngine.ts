@@ -469,7 +469,10 @@ export class RLEngine {
     }
 
     // Epsilon decay if configured
-    if (this.params.epsilonDecay && this.params.explorationRate > (this.params.minEpsilon ?? 0.01)) {
+    if (
+      this.params.epsilonDecay &&
+      this.params.explorationRate > (this.params.minEpsilon ?? 0.01)
+    ) {
       this.params.explorationRate = Math.max(
         this.params.minEpsilon ?? 0.01,
         this.params.explorationRate * this.params.epsilonDecay,
@@ -528,7 +531,9 @@ export class RLEngine {
           const diff = Math.abs(currentQ[action] - backupVal);
           if (diff > maxDelta) maxDelta = diff;
 
-          currentQ[action] = currentQ[action] + this.params.learningRate * (backupVal - currentQ[action]);
+          currentQ[action] =
+            currentQ[action] +
+            this.params.learningRate * (backupVal - currentQ[action]);
         }
 
         this.qTable[key] = currentQ;

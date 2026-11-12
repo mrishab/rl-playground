@@ -384,7 +384,10 @@ describe("RL Engine with Smart Obstacles", () => {
     }
     // All 4 actions must be chosen at least once on ties, proving unbiased exploration
     for (let a = 0; a < 4; a++) {
-      assert.ok(chosenCounts[a] > 5, `Action ${a} was only chosen ${chosenCounts[a]} times`);
+      assert.ok(
+        chosenCounts[a] > 5,
+        `Action ${a} was only chosen ${chosenCounts[a]} times`,
+      );
     }
   });
 
@@ -437,7 +440,9 @@ describe("RL Engine with Smart Obstacles", () => {
     assert.equal(res.caughtByObstacle, true);
     assert.equal(res.isTerminal, false);
     // Smart obstacle should have stepped (moved to [0, 2] or bounced)
-    assert.ok(engine.smartObstacles[0].c !== 1 || engine.smartObstacles[0].r !== 0);
+    assert.ok(
+      engine.smartObstacles[0].c !== 1 || engine.smartObstacles[0].r !== 0,
+    );
   });
 
   it("should correctly terminate when agent is already at goal", () => {
@@ -500,18 +505,24 @@ describe("RL Store Integration", () => {
     // Try to place smart obstacle at startPos and goalPos
     store.toggleCell(startR, startC, "smart-obstacle");
     assert.ok(
-      !useRLStore.getState().smartObstacles.some((o) => o.r === startR && o.c === startC),
+      !useRLStore
+        .getState()
+        .smartObstacles.some((o) => o.r === startR && o.c === startC),
     );
 
     store.toggleCell(goalR, goalC, "smart-obstacle");
     assert.ok(
-      !useRLStore.getState().smartObstacles.some((o) => o.r === goalR && o.c === goalC),
+      !useRLStore
+        .getState()
+        .smartObstacles.some((o) => o.r === goalR && o.c === goalC),
     );
 
     // Try to place wall at startPos
     store.toggleCell(startR, startC, "obstacle");
     assert.ok(
-      !useRLStore.getState().obstacles.some(([r, c]) => r === startR && c === startC),
+      !useRLStore
+        .getState()
+        .obstacles.some(([r, c]) => r === startR && c === startC),
     );
   });
 });

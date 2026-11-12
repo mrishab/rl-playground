@@ -7,6 +7,7 @@ Live application: **[https://mrishab.github.io/RL-Playground/](https://mrishab.g
 ## ✨ Core Modules & Learning Labs
 
 ### 1. GridWorld Laboratory (`/gridworld`)
+
 - **Algorithms Supported:**
   - **Q-Learning** (Off-policy TD control)
   - **SARSA** (On-policy TD control)
@@ -15,11 +16,11 @@ Live application: **[https://mrishab.github.io/RL-Playground/](https://mrishab.g
   - **Monte Carlo Control** (First-visit episodic returns)
   - **Value Iteration** (Dynamic programming Bellman optimality backup)
 - **Classic Sutton & Barto Presets:**
-  - *Cliff Walking (Example 6.6):* Visual demonstration of SARSA choosing the safe path while Q-Learning cuts close to the cliff edge.
-  - *Frozen Lake:* Slippery stochastic ice transitions with slip probability $P(\text{slip})$.
-  - *Sutton-Barto Gridworld:* Teleports, mud penalties, and hazards.
-  - *Dynamic Predators:* Smart obstacles with Patrol, Chase, Ambush, Guard, and Random strategies.
-  - *Maze Runner:* Deep dead ends requiring exploration.
+  - _Cliff Walking (Example 6.6):_ Visual demonstration of SARSA choosing the safe path while Q-Learning cuts close to the cliff edge.
+  - _Frozen Lake:_ Slippery stochastic ice transitions with slip probability $P(\text{slip})$.
+  - _Sutton-Barto Gridworld:_ Teleports, mud penalties, and hazards.
+  - _Dynamic Predators:_ Smart obstacles with Patrol, Chase, Ambush, Guard, and Random strategies.
+  - _Maze Runner:_ Deep dead ends requiring exploration.
 - **Interactive Visual Overlays:**
   - Value Function Heatmap ($V^*(s)$)
   - Derived Policy Vectors ($\pi^*(s)$)
@@ -28,6 +29,7 @@ Live application: **[https://mrishab.github.io/RL-Playground/](https://mrishab.g
   - Live Mathematical Bellman Inspector with numerical formula substitution.
 
 ### 2. Multi-Armed Bandits Lab (`/bandits`)
+
 - **10-Armed Gaussian Bandit Testbed** (Sutton & Barto Chapter 2).
 - Compare exploration vs exploitation strategies:
   - $\epsilon$-Greedy ($\epsilon = 0, 0.01, 0.1$)
@@ -38,17 +40,20 @@ Live application: **[https://mrishab.github.io/RL-Playground/](https://mrishab.g
 - Real-time plots: Average Reward vs. Steps, % Optimal Action Selected, and Arm Pulls distribution.
 
 ### 3. Dynamic Programming Lab (`/dp`)
+
 - **Model-Based Planning** (Sutton & Barto Chapter 4).
 - Exact Bellman Optimality Backups: $V_{k+1}(s) = \max_a \sum_{s', r} P(s', r | s, a) [r + \gamma V_k(s')]$.
 - Step-by-step sweep visualization with maximum change $\Delta = \max_s |V_{k+1}(s) - V_k(s)|$.
 - Interactive State Inspector breaking down transition probabilities and expected returns for each action.
 
 ### 4. Saved Policies & Agent Management (`/agents`)
+
 - Save trained agent snapshots with hyperparameters, grid layout, and Q-table.
 - Export / Import agent policies via JSON.
 - Load any saved agent back into the GridWorld lab for live replay.
 
 ### 5. Theory & Undergrad Self-Check Quiz (`/theory`)
+
 - Comprehensive mathematical reference covering MDPs, Bellman Equations, and TD learning.
 - 5-question interactive conceptual quiz with instant scoring and pedagogical explanations.
 

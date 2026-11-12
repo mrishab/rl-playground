@@ -1,8 +1,5 @@
 import { create } from "zustand";
-import type {
-  SavedRLAgent,
-  SavedAgentsStore,
-} from "../types/savedAgent";
+import type { SavedRLAgent, SavedAgentsStore } from "../types/savedAgent";
 
 const STORAGE_KEY = "rl_playground_saved_agents";
 
@@ -79,8 +76,12 @@ export const useSavedAgentsStore = create<SavedAgentsStore>((set, get) => ({
   importAgents: (rawJson) => {
     try {
       const parsed = JSON.parse(rawJson);
-      const incoming: SavedRLAgent[] = Array.isArray(parsed) ? parsed : [parsed];
-      const valid = incoming.filter((a) => a && typeof a.name === "string" && a.qTable);
+      const incoming: SavedRLAgent[] = Array.isArray(parsed)
+        ? parsed
+        : [parsed];
+      const valid = incoming.filter(
+        (a) => a && typeof a.name === "string" && a.qTable,
+      );
       if (valid.length === 0) return 0;
       const current = get().agents;
       const combined = [...valid, ...current];

@@ -40,7 +40,9 @@ export function RLRewardChart({ rewards, steps = [], tdErrors = [] }: Props) {
     <Card>
       <CardHeader className="pb-1 pt-3 px-4 flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-xs font-medium">Training Analytics</CardTitle>
+          <CardTitle className="text-xs font-medium">
+            Training Analytics
+          </CardTitle>
           <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded border text-[11px]">
             <Button
               size="sm"
@@ -69,7 +71,8 @@ export function RLRewardChart({ rewards, steps = [], tdErrors = [] }: Props) {
           </div>
         </div>
         <span className="text-[10px] text-muted-foreground font-mono">
-          min: {minVal.toFixed(1)} | max: {maxVal.toFixed(1)} | total: {currentData.length}
+          min: {minVal.toFixed(1)} | max: {maxVal.toFixed(1)} | total:{" "}
+          {currentData.length}
         </span>
       </CardHeader>
       <CardContent className="p-3 pt-1">

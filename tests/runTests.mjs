@@ -3,13 +3,17 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const jitiCli = path.resolve(__dirname, "../node_modules/jiti/lib/jiti-cli.mjs");
+const jitiCli = path.resolve(
+  __dirname,
+  "../node_modules/jiti/lib/jiti-cli.mjs",
+);
 
 const testFiles = [
   "rl.test.ts",
   "bandit.test.ts",
   "dp.test.ts",
   "renderCheck.test.ts",
+  "e2eWorkflowCheck.test.ts",
 ].map((f) => path.resolve(__dirname, f));
 
 let allPassed = true;

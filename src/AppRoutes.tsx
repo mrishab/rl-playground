@@ -18,7 +18,11 @@ export function AppRoutes() {
         <Route path="agents" element={<SavedAgentsPage />} />
         <Route path="theory" element={<TheoryPage />} />
         {REDIRECTS.map(({ path, to }) => (
-          <Route key={path} path={path} element={<Navigate to={to} replace />} />
+          <Route
+            key={path}
+            path={path}
+            element={<Navigate to={to} replace />}
+          />
         ))}
       </Route>
     </Routes>

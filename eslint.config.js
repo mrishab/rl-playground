@@ -38,4 +38,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ["tests/**/*.{ts,tsx,js,mjs}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
 );

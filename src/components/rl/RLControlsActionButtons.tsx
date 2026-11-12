@@ -52,7 +52,9 @@ export function RLControlsActionButtons({
           variant={isSimulating ? "default" : "secondary"}
           className="h-8 text-xs gap-1"
           onClick={onToggleSimulate}
-          title={isSimulating ? "Pause simulation" : "Run continuous simulation"}
+          title={
+            isSimulating ? "Pause simulation" : "Run continuous simulation"
+          }
         >
           <SimIcon className="h-3 w-3" />
           {isSimulating ? "Pause" : "Play"}

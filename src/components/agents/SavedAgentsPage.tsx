@@ -92,7 +92,7 @@ export function SavedAgentsPage() {
       params: {
         ...rlState.params,
         ...agent.hyperparameters,
-        algorithm: agent.algorithm as any,
+        algorithm: agent.algorithm,
       },
     });
     navigate("/gridworld");
@@ -150,7 +150,9 @@ export function SavedAgentsPage() {
                 variant="ghost"
                 className="h-8 text-xs text-destructive hover:bg-destructive/10"
                 onClick={() => {
-                  if (confirm("Are you sure you want to delete all saved agents?")) {
+                  if (
+                    confirm("Are you sure you want to delete all saved agents?")
+                  ) {
                     clearAll();
                   }
                 }}
@@ -167,7 +169,9 @@ export function SavedAgentsPage() {
             <Cpu className="h-10 w-10 text-muted-foreground mx-auto" />
             <CardTitle className="text-base">No Saved Agents Found</CardTitle>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              Train a policy in the GridWorld lab and click the &quot;Save&quot; button in Policy Controls to store snapshots here, or import a pre-trained JSON policy.
+              Train a policy in the GridWorld lab and click the &quot;Save&quot;
+              button in Policy Controls to store snapshots here, or import a
+              pre-trained JSON policy.
             </p>
             <Button
               size="sm"
@@ -227,7 +231,10 @@ export function SavedAgentsPage() {
                           </button>
                         </div>
                       )}
-                      <Badge variant="outline" className="text-[10px] shrink-0 font-mono">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] shrink-0 font-mono"
+                      >
                         {agent.algorithm}
                       </Badge>
                     </div>
@@ -256,7 +263,9 @@ export function SavedAgentsPage() {
                         <div className="text-[9px] text-muted-foreground uppercase">
                           Episodes
                         </div>
-                        <div className="font-bold">{agent.metrics.totalEpisodes}</div>
+                        <div className="font-bold">
+                          {agent.metrics.totalEpisodes}
+                        </div>
                       </div>
                       <div>
                         <div className="text-[9px] text-muted-foreground uppercase">

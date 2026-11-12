@@ -29,14 +29,21 @@ const DEFAULT_RULES: RLEnvironmentRules = {
   hazardIsTerminal: true,
 };
 
-let engine = new DPEngine(
+const engine = new DPEngine(
   DEFAULT_RULES,
   0.95,
   0.001,
   [0, 0],
   [4, 4],
-  [[1, 2], [2, 2], [3, 2]],
-  [[2, 1], [2, 3]],
+  [
+    [1, 2],
+    [2, 2],
+    [3, 2],
+  ],
+  [
+    [2, 1],
+    [2, 3],
+  ],
 );
 
 export const useDPStore = create<DPStoreState>((set, get) => ({

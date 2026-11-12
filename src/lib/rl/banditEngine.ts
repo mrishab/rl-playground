@@ -1,8 +1,4 @@
-import type {
-  BanditArm,
-  BanditRunConfig,
-  BanditStepResult,
-} from "./types";
+import type { BanditArm, BanditRunConfig, BanditStepResult } from "./types";
 
 export function sampleNormal(mean: number = 0, stdDev: number = 1): number {
   // Box-Muller transform

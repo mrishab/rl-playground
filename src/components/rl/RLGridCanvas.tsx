@@ -88,7 +88,9 @@ export function RLGridCanvas({ store }: Props) {
             <div className="flex items-center justify-between font-medium">
               <span>
                 State ({inspected[0]}, {inspected[1]}): V*(s) ={" "}
-                <span className="font-mono text-primary">{maxQ.toFixed(2)}</span>
+                <span className="font-mono text-primary">
+                  {maxQ.toFixed(2)}
+                </span>
               </span>
               <span className="text-[11px] text-muted-foreground">
                 Best:{" "}
@@ -120,7 +122,9 @@ export function RLGridCanvas({ store }: Props) {
         {/* Live transition calculation log */}
         {store.lastTransition && (
           <div className="w-full bg-muted/20 border border-dashed rounded p-2 text-[11px] font-mono text-muted-foreground">
-            <span className="font-semibold text-foreground">Last Bellman Update: </span>
+            <span className="font-semibold text-foreground">
+              Last Bellman Update:{" "}
+            </span>
             {store.lastTransition.formula}
           </div>
         )}

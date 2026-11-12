@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { GitCommit, Play, FastForward, RotateCcw, HelpCircle } from "lucide-react";
+import {
+  GitCommit,
+  Play,
+  FastForward,
+  RotateCcw,
+  HelpCircle,
+} from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +16,9 @@ import { ACTION_ARROWS, ACTION_NAMES, type Action } from "@/lib/rl/types";
 
 export function DPPage() {
   const store = useDPStore();
-  const [selectedCell, setSelectedCell] = useState<[number, number] | null>([1, 1]);
+  const [selectedCell, setSelectedCell] = useState<[number, number] | null>([
+    1, 1,
+  ]);
 
   const gridSize = store.rules.gridSize;
 
@@ -34,11 +42,16 @@ export function DPPage() {
           <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           <div className="space-y-1">
             <span className="font-semibold text-foreground">
-              Undergraduate RL Concept: Model-Based Planning & Bellman Optimality Equation
+              Undergraduate RL Concept: Model-Based Planning & Bellman
+              Optimality Equation
             </span>
             <p>
-              Unlike model-free RL (Q-learning, SARSA) which must sample transitions from trial and error, <strong>Dynamic Programming</strong> assumes complete knowledge of the environment model: transition probabilities P(s'|s, a) and rewards R(s, a).
-              Value Iteration guarantees convergence to the unique optimal value function V*(s).
+              Unlike model-free RL (Q-learning, SARSA) which must sample
+              transitions from trial and error,{" "}
+              <strong>Dynamic Programming</strong> assumes complete knowledge of
+              the environment model: transition probabilities P(s'|s, a) and
+              rewards R(s, a). Value Iteration guarantees convergence to the
+              unique optimal value function V*(s).
             </p>
           </div>
         </div>
@@ -47,7 +60,9 @@ export function DPPage() {
           {/* Controls Column */}
           <Card className="space-y-4 p-4">
             <CardHeader className="p-0 pb-2">
-              <CardTitle className="text-base">Value Iteration Controls</CardTitle>
+              <CardTitle className="text-base">
+                Value Iteration Controls
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0 space-y-4">
               <div className="space-y-1.5">
@@ -135,11 +150,13 @@ export function DPPage() {
                 State Values V*(s) & Derived Greedy Policy π*(s)
               </CardTitle>
               <div className="text-xs text-muted-foreground">
-                Click any cell to inspect its Bellman optimality backup equation.
+                Click any cell to inspect its Bellman optimality backup
+                equation.
               </div>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center p-4">
               <div
+                data-testid="dp-grid-cells"
                 className="grid gap-1.5 w-full max-w-sm mx-auto"
                 style={{
                   gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
@@ -150,10 +167,16 @@ export function DPPage() {
                   const c = idx % gridSize;
                   const key = stateKey(r, c);
                   const isGoal = r === 4 && c === 4;
-                  const isObstacle = (r === 2 && c === 1) || (r === 2 && c === 3);
-                  const isHazard = (r === 1 && c === 2) || (r === 2 && c === 2) || (r === 3 && c === 2);
+                  const isObstacle =
+                    (r === 2 && c === 1) || (r === 2 && c === 3);
+                  const isHazard =
+                    (r === 1 && c === 2) ||
+                    (r === 2 && c === 2) ||
+                    (r === 3 && c === 2);
                   const isSelected =
-                    selectedCell && selectedCell[0] === r && selectedCell[1] === c;
+                    selectedCell &&
+                    selectedCell[0] === r &&
+                    selectedCell[1] === c;
 
                   const v = store.values[key] || 0;
                   const policyAction = store.policy[key] ?? 0;
@@ -162,6 +185,7 @@ export function DPPage() {
                     <button
                       key={key}
                       type="button"
+                      data-testid={`dp-cell-${r}-${c}`}
                       onClick={() => handleCellClick(r, c)}
                       className={`relative aspect-square rounded-md border flex flex-col items-center justify-center p-1 text-xs transition-all cursor-pointer ${
                         isSelected
@@ -210,7 +234,8 @@ export function DPPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">
-                Mathematical Inspector: State ({inspected.state[0]}, {inspected.state[1]})
+                Mathematical Inspector: State ({inspected.state[0]},{" "}
+                {inspected.state[1]})
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -244,7 +269,9 @@ export function DPPage() {
                       <div className="text-[10px] text-muted-foreground space-y-0.5">
                         {actionData.transitions.map((t, i) => (
                           <div key={i} className="font-mono">
-                            P={t.prob.toFixed(2)} → ({t.nextState[0]},{t.nextState[1]}), R={t.reward}, V={t.nextV.toFixed(2)}
+                            P={t.prob.toFixed(2)} → ({t.nextState[0]},
+                            {t.nextState[1]}), R={t.reward}, V=
+                            {t.nextV.toFixed(2)}
                           </div>
                         ))}
                       </div>

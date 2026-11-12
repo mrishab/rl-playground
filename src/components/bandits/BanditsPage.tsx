@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Target, Play, Pause, FastForward, RotateCcw, HelpCircle } from "lucide-react";
+import {
+  Target,
+  Play,
+  Pause,
+  FastForward,
+  RotateCcw,
+  HelpCircle,
+} from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +29,8 @@ export function BanditsPage() {
   }, [animating, store]);
 
   const optimalIdx = store.arms.reduce(
-    (maxIdx, arm, idx, arr) => (arm.trueMean > arr[maxIdx].trueMean ? idx : maxIdx),
+    (maxIdx, arm, idx, arr) =>
+      arm.trueMean > arr[maxIdx].trueMean ? idx : maxIdx,
     0,
   );
 
@@ -42,8 +50,11 @@ export function BanditsPage() {
               Undergraduate RL Concept: The Exploration vs. Exploitation Dilemma
             </span>
             <p>
-              In a k-armed bandit problem, an agent chooses among 10 discrete actions with unknown reward distributions.
-              To maximize cumulative reward, the agent must balance <strong>exploiting</strong> what is already known to yield high payoff with <strong>exploring</strong> untested arms that could be even better.
+              In a k-armed bandit problem, an agent chooses among 10 discrete
+              actions with unknown reward distributions. To maximize cumulative
+              reward, the agent must balance <strong>exploiting</strong> what is
+              already known to yield high payoff with <strong>exploring</strong>{" "}
+              untested arms that could be even better.
             </p>
           </div>
         </div>
@@ -53,8 +64,11 @@ export function BanditsPage() {
           {/* Algorithm Config */}
           <Card className="md:col-span-2">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Bandit Strategy & Parameters</CardTitle>
+              <CardTitle className="text-base">
+                Bandit Strategy & Parameters
+              </CardTitle>
               <select
+                id="bandit-algorithm-select"
                 value={store.config.algorithm}
                 onChange={(e) =>
                   store.setAlgorithm(e.target.value as BanditAlgorithm)
@@ -63,8 +77,12 @@ export function BanditsPage() {
               >
                 <option value="epsilon-greedy">ε-Greedy</option>
                 <option value="ucb1">Upper Confidence Bound (UCB1)</option>
-                <option value="optimistic-initial">Optimistic Initial Values</option>
-                <option value="thompson-sampling">Thompson Sampling (Bayesian)</option>
+                <option value="optimistic-initial">
+                  Optimistic Initial Values
+                </option>
+                <option value="thompson-sampling">
+                  Thompson Sampling (Bayesian)
+                </option>
                 <option value="pure-greedy">Pure Greedy (ε=0)</option>
               </select>
             </CardHeader>
@@ -74,7 +92,9 @@ export function BanditsPage() {
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
                     <span className="font-medium">Exploration Rate (ε):</span>
-                    <span className="font-mono">{store.config.epsilon.toFixed(2)}</span>
+                    <span className="font-mono">
+                      {store.config.epsilon.toFixed(2)}
+                    </span>
                   </div>
                   <Slider
                     value={[store.config.epsilon]}
@@ -84,7 +104,8 @@ export function BanditsPage() {
                     onValueChange={([val]) => store.setConfig({ epsilon: val })}
                   />
                   <span className="text-[10px] text-muted-foreground">
-                    Probability of taking a random action instead of the greedy action.
+                    Probability of taking a random action instead of the greedy
+                    action.
                   </span>
                 </div>
               )}
@@ -92,8 +113,12 @@ export function BanditsPage() {
               {store.config.algorithm === "ucb1" && (
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
-                    <span className="font-medium">UCB Exploration Confidence (c):</span>
-                    <span className="font-mono">{store.config.c.toFixed(2)}</span>
+                    <span className="font-medium">
+                      UCB Exploration Confidence (c):
+                    </span>
+                    <span className="font-mono">
+                      {store.config.c.toFixed(2)}
+                    </span>
                   </div>
                   <Slider
                     value={[store.config.c]}
@@ -103,7 +128,8 @@ export function BanditsPage() {
                     onValueChange={([val]) => store.setConfig({ c: val })}
                   />
                   <span className="text-[10px] text-muted-foreground">
-                    Determines weight given to uncertainty: A_t = argmax [Q(a) + c √(ln t / N(a))].
+                    Determines weight given to uncertainty: A_t = argmax [Q(a) +
+                    c √(ln t / N(a))].
                   </span>
                 </div>
               )}
@@ -112,17 +138,22 @@ export function BanditsPage() {
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
                     <span className="font-medium">Initial Q-Value (Q₀):</span>
-                    <span className="font-mono">{store.config.initialQ.toFixed(1)}</span>
+                    <span className="font-mono">
+                      {store.config.initialQ.toFixed(1)}
+                    </span>
                   </div>
                   <Slider
                     value={[store.config.initialQ || 5.0]}
                     min={1.0}
                     max={10.0}
                     step={0.5}
-                    onValueChange={([val]) => store.setConfig({ initialQ: val })}
+                    onValueChange={([val]) =>
+                      store.setConfig({ initialQ: val })
+                    }
                   />
                   <span className="text-[10px] text-muted-foreground">
-                    Initial bias encourages early systematic exploration without randomness.
+                    Initial bias encourages early systematic exploration without
+                    randomness.
                   </span>
                 </div>
               )}
@@ -130,7 +161,12 @@ export function BanditsPage() {
               {/* Stationary Toggle */}
               <div className="flex items-center justify-between border-t pt-3">
                 <div className="space-y-0.5">
-                  <Label htmlFor="stationary-switch" className="text-xs font-medium">Stationary Bandit</Label>
+                  <Label
+                    htmlFor="stationary-switch"
+                    className="text-xs font-medium"
+                  >
+                    Stationary Bandit
+                  </Label>
                   <div className="text-[10px] text-muted-foreground">
                     {store.config.isStationary
                       ? "Arm true reward means remain fixed."
@@ -177,7 +213,11 @@ export function BanditsPage() {
                   className="h-8 text-xs gap-1"
                   onClick={() => setAnimating(!animating)}
                 >
-                  {animating ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                  {animating ? (
+                    <Pause className="h-3 w-3" />
+                  ) : (
+                    <Play className="h-3 w-3" />
+                  )}
                   {animating ? "Pause" : "Auto-Run"}
                 </Button>
                 <Button

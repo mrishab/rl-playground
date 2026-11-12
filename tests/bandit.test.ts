@@ -12,7 +12,10 @@ describe("Multi-Armed Bandit Engine", () => {
   });
 
   it("should select arms and record step results", () => {
-    const bandit = new BanditEngine({ algorithm: "epsilon-greedy", epsilon: 0.1 });
+    const bandit = new BanditEngine({
+      algorithm: "epsilon-greedy",
+      epsilon: 0.1,
+    });
     const res = bandit.step();
     assert.equal(res.step, 1);
     assert.ok(res.chosenArm >= 0 && res.chosenArm < 10);
