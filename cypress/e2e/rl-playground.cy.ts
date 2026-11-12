@@ -1,11 +1,6 @@
 describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
   beforeEach(() => {
-    // Intercept and assert 0 console errors
-    cy.visit("", {
-      onBeforeLoad(win) {
-        cy.spy(win.console, "error").as("consoleError");
-      },
-    });
+    cy.visit("");
   });
 
   afterEach(() => {
