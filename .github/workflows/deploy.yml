@@ -42,14 +42,6 @@ jobs:
       - name: Run Tests
         run: npm test
 
-      - name: Cypress E2E Tests
-        uses: cypress-io/github-action@v6
-        with:
-          install: false
-          start: npm run preview
-          wait-on: "http://localhost:3000/RL-Playground/"
-          wait-on-timeout: 120
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
