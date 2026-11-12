@@ -1,6 +1,5 @@
 import { Bot } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
-import { RLInfoCallout } from "./RLInfoCallout";
 import { RLGridCanvas } from "./RLGridCanvas";
 import { RLConfigColumn } from "./RLConfigColumn";
 import { RLMetricsCard } from "./RLMetricsCard";
@@ -21,7 +20,6 @@ export function RLPage() {
       hideActionGate
     >
       <div className="space-y-4 max-w-6xl mx-auto w-full">
-        <RLInfoCallout />
         <div className="grid gap-4 lg:grid-cols-2">
           <RLConfigColumn store={p} />
           <div className="space-y-4">

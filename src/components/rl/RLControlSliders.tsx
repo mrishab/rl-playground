@@ -13,7 +13,6 @@ export function RLControlSliders({ params, onChange }: Props) {
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
           <Label>Learning Rate α ({params.learningRate.toFixed(2)})</Label>
-          <span className="text-muted-foreground">Step size</span>
         </div>
         <Slider
           min={5}
@@ -26,9 +25,6 @@ export function RLControlSliders({ params, onChange }: Props) {
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
           <Label>Discount Factor γ ({params.discountFactor.toFixed(2)})</Label>
-          <span className="text-muted-foreground">
-            Future vs immediate reward
-          </span>
         </div>
         <Slider
           min={50}
@@ -43,7 +39,6 @@ export function RLControlSliders({ params, onChange }: Props) {
           <Label>
             Exploration Rate ε ({Math.round(params.explorationRate * 100)}%)
           </Label>
-          <span className="text-muted-foreground">Random action chance</span>
         </div>
         <Slider
           min={0}

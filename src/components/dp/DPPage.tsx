@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  GitCommit,
-  Play,
-  FastForward,
-  RotateCcw,
-  HelpCircle,
-} from "lucide-react";
+import { GitCommit, Play, FastForward, RotateCcw } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,25 +31,6 @@ export function DPPage() {
       hideActionGate
     >
       <div className="space-y-4 max-w-6xl mx-auto w-full">
-        {/* Info Callout */}
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-muted-foreground flex items-start gap-3">
-          <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <span className="font-semibold text-foreground">
-              Undergraduate RL Concept: Model-Based Planning & Bellman
-              Optimality Equation
-            </span>
-            <p>
-              Unlike model-free RL (Q-learning, SARSA) which must sample
-              transitions from trial and error,{" "}
-              <strong>Dynamic Programming</strong> assumes complete knowledge of
-              the environment model: transition probabilities P(s'|s, a) and
-              rewards R(s, a). Value Iteration guarantees convergence to the
-              unique optimal value function V*(s).
-            </p>
-          </div>
-        </div>
-
         <div className="grid gap-4 lg:grid-cols-3">
           {/* Controls Column */}
           <Card className="space-y-4 p-4">
@@ -147,12 +122,8 @@ export function DPPage() {
           <Card className="lg:col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">
-                State Values V*(s) & Derived Greedy Policy π*(s)
+                State Values V*(s) &amp; Derived Greedy Policy π*(s)
               </CardTitle>
-              <div className="text-xs text-muted-foreground">
-                Click any cell to inspect its Bellman optimality backup
-                equation.
-              </div>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center p-4">
               <div

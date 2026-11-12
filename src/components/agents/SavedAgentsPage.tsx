@@ -107,7 +107,7 @@ export function SavedAgentsPage() {
     >
       <div className="space-y-4 max-w-6xl mx-auto w-full">
         {/* Top Actions & Filter Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 bg-muted/30 p-3 rounded-lg border">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -166,12 +166,10 @@ export function SavedAgentsPage() {
         {/* Empty State */}
         {filteredAgents.length === 0 ? (
           <Card className="border-dashed p-8 text-center space-y-3">
-            <Cpu className="h-10 w-10 text-muted-foreground mx-auto" />
             <CardTitle className="text-base">No Saved Agents Found</CardTitle>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              Train a policy in the GridWorld lab and click the &quot;Save&quot;
-              button in Policy Controls to store snapshots here, or import a
-              pre-trained JSON policy.
+              Train a policy in the GridWorld lab and click &quot;Save&quot; to
+              store snapshots here, or import a JSON policy.
             </p>
             <Button
               size="sm"

@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Target,
-  Play,
-  Pause,
-  FastForward,
-  RotateCcw,
-  HelpCircle,
-} from "lucide-react";
+import { Target, Play, Pause, FastForward, RotateCcw } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,23 +35,6 @@ export function BanditsPage() {
       hideActionGate
     >
       <div className="space-y-4 max-w-6xl mx-auto w-full">
-        {/* Info Callout */}
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs text-muted-foreground flex items-start gap-3">
-          <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <span className="font-semibold text-foreground">
-              Undergraduate RL Concept: The Exploration vs. Exploitation Dilemma
-            </span>
-            <p>
-              In a k-armed bandit problem, an agent chooses among 10 discrete
-              actions with unknown reward distributions. To maximize cumulative
-              reward, the agent must balance <strong>exploiting</strong> what is
-              already known to yield high payoff with <strong>exploring</strong>{" "}
-              untested arms that could be even better.
-            </p>
-          </div>
-        </div>
-
         {/* Controls and Stats Grid */}
         <div className="grid gap-4 md:grid-cols-3">
           {/* Algorithm Config */}
@@ -243,7 +219,7 @@ export function BanditsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="bg-muted/40 p-2.5 rounded-lg border">
+                <div className="bg-muted/40 p-2.5 rounded-lg">
                   <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                     Steps
                   </div>
@@ -251,7 +227,7 @@ export function BanditsPage() {
                     {store.stepCount}
                   </div>
                 </div>
-                <div className="bg-muted/40 p-2.5 rounded-lg border">
+                <div className="bg-muted/40 p-2.5 rounded-lg">
                   <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                     Optimal Arm %
                   </div>
@@ -259,7 +235,7 @@ export function BanditsPage() {
                     {store.optimalRate.toFixed(1)}%
                   </div>
                 </div>
-                <div className="bg-muted/40 p-2.5 rounded-lg border">
+                <div className="bg-muted/40 p-2.5 rounded-lg">
                   <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                     Avg Reward
                   </div>
@@ -267,7 +243,7 @@ export function BanditsPage() {
                     {store.averageReward.toFixed(2)}
                   </div>
                 </div>
-                <div className="bg-muted/40 p-2.5 rounded-lg border">
+                <div className="bg-muted/40 p-2.5 rounded-lg">
                   <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                     Total Reward
                   </div>
@@ -284,12 +260,6 @@ export function BanditsPage() {
                     Arm #{optimalIdx + 1}
                   </span>{" "}
                   (μ = {store.arms[optimalIdx]?.trueMean.toFixed(2)})
-                </div>
-                <div>
-                  Update Rule:{" "}
-                  <code className="text-[10px] bg-muted px-1 py-0.5 rounded">
-                    Q(a) ← Q(a) + 1/N [R - Q(a)]
-                  </code>
                 </div>
               </div>
             </CardContent>

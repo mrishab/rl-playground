@@ -121,8 +121,7 @@ export function TheoryPage() {
           {/* Concept 1: MDP */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-primary" />
+              <CardTitle className="text-sm font-semibold">
                 1. Markov Decision Processes (MDP)
               </CardTitle>
             </CardHeader>
@@ -160,8 +159,7 @@ export function TheoryPage() {
           {/* Concept 2: Bellman Equations */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-primary" />
+              <CardTitle className="text-sm font-semibold">
                 2. Bellman Equations
               </CardTitle>
             </CardHeader>
@@ -188,8 +186,7 @@ export function TheoryPage() {
           {/* Concept 3: Q-Learning vs SARSA */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-primary" />
+              <CardTitle className="text-sm font-semibold">
                 3. Q-Learning vs. SARSA
               </CardTitle>
             </CardHeader>
@@ -219,9 +216,8 @@ export function TheoryPage() {
           {/* Concept 4: Bandits & Exploration */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-primary" />
-                4. Multi-Armed Bandits & UCB
+              <CardTitle className="text-sm font-semibold">
+                4. Multi-Armed Bandits &amp; UCB
               </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-2">
@@ -244,14 +240,9 @@ export function TheoryPage() {
         {/* Interactive Self-Check Quiz */}
         <Card className="border-primary/30">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base">
-                Undergraduate Mastery Quiz
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Test your conceptual understanding of core RL fundamentals.
-              </p>
-            </div>
+            <CardTitle className="text-base">
+              Undergraduate Mastery Quiz
+            </CardTitle>
             {submitted && (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold font-mono bg-primary/10 text-primary px-2.5 py-1 rounded-md border border-primary/30">
