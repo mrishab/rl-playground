@@ -19,9 +19,6 @@ export function RLSmartObstaclesCard({
   onUpdateStrategy,
   onRemove,
 }: Props) {
-  const current =
-    STRATEGIES.find((s) => s.id === activeStrategy) ?? STRATEGIES[0];
-
   return (
     <Card>
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -44,7 +41,6 @@ export function RLSmartObstaclesCard({
             </Button>
           ))}
         </div>
-        <p className="text-[11px] text-muted-foreground">{current.desc}</p>
         <RLObstacleBadgeList
           obstacles={smartObstacles}
           onUpdateStrategy={onUpdateStrategy}

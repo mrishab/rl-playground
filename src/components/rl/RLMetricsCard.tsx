@@ -24,21 +24,18 @@ export function RLMetricsCard({
     rewardHistory.length > 0 ? rewardHistory[rewardHistory.length - 1] : 0;
 
   const stats = [
-    { label: "Episodes", value: String(totalEpisodes), sub: "total runs" },
+    { label: "Episodes", value: String(totalEpisodes) },
     {
       label: "Success Rate",
       value: `${successRate.toFixed(0)}%`,
-      sub: `${successCount} reached goal`,
     },
     {
       label: "Avg Steps",
       value: avgSteps > 0 ? avgSteps.toFixed(1) : "—",
-      sub: "recent 20 eps",
     },
     {
       label: "Last Reward",
       value: totalEpisodes > 0 ? lastReward.toFixed(0) : "—",
-      sub: "net payoff",
     },
   ];
 
@@ -51,7 +48,6 @@ export function RLMetricsCard({
             <div className="text-xl font-bold font-mono tracking-tight">
               {s.value}
             </div>
-            <span className="text-[9px] text-muted-foreground">{s.sub}</span>
           </CardContent>
         </Card>
       ))}

@@ -14,7 +14,6 @@ export function RLEnvironmentRuleSliders({ rules, onChange }: Props) {
     <div className="space-y-3.5">
       <RLRuleSliderRow
         label={`Goal Reward (+${rules.goalReward})`}
-        sub="+10 to +100"
         val={rules.goalReward}
         min={10}
         max={100}
@@ -23,7 +22,6 @@ export function RLEnvironmentRuleSliders({ rules, onChange }: Props) {
       />
       <RLRuleSliderRow
         label={`Step Cost (${rules.stepReward})`}
-        sub="-3 to 0"
         val={rules.stepReward}
         min={-3}
         max={0}
@@ -32,7 +30,6 @@ export function RLEnvironmentRuleSliders({ rules, onChange }: Props) {
       />
       <RLRuleSliderRow
         label={`Hazard Penalty (${rules.hazardPenalty})`}
-        sub="-100 to -10"
         val={rules.hazardPenalty}
         min={-100}
         max={-10}
@@ -41,7 +38,6 @@ export function RLEnvironmentRuleSliders({ rules, onChange }: Props) {
       />
       <RLRuleSliderRow
         label={`Villain Penalty (${obsPen})`}
-        sub="-100 to -10"
         val={obsPen}
         min={-100}
         max={-10}
@@ -50,7 +46,6 @@ export function RLEnvironmentRuleSliders({ rules, onChange }: Props) {
       />
       <RLRuleSliderRow
         label={`Floor Slip (${slip}%)`}
-        sub="Wind / Slip"
         val={slip}
         min={0}
         max={30}

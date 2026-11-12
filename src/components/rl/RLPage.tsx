@@ -4,13 +4,10 @@ import { RLGridCanvas } from "./RLGridCanvas";
 import { RLConfigColumn } from "./RLConfigColumn";
 import { RLMetricsCard } from "./RLMetricsCard";
 import { RLRewardChart } from "./RLRewardChart";
-import { RLBFSComparisonCard } from "./RLBFSComparisonCard";
 import { useRLPage } from "./useRLPage";
 
 export function RLPage() {
   const p = useRLPage();
-  const rate =
-    p.totalEpisodes > 0 ? (p.successCount / p.totalEpisodes) * 100 : 0;
 
   return (
     <PageLayout
@@ -22,14 +19,7 @@ export function RLPage() {
       <div className="space-y-4 max-w-6xl mx-auto w-full">
         <div className="grid gap-4 lg:grid-cols-2">
           <RLConfigColumn store={p} />
-          <div className="space-y-4">
-            <RLGridCanvas store={p} />
-            <RLBFSComparisonCard
-              bfsResult={p.bfsResult}
-              successRate={rate}
-              totalEpisodes={p.totalEpisodes}
-            />
-          </div>
+          <RLGridCanvas store={p} />
         </div>
         <RLMetricsCard
           totalEpisodes={p.totalEpisodes}

@@ -3,7 +3,7 @@ import { Slider } from "@/components/ui/slider";
 
 type Props = {
   label: string;
-  sub: string;
+  sub?: string;
   val: number;
   min: number;
   max: number;
@@ -24,7 +24,7 @@ export function RLRuleSliderRow({
     <div className="space-y-1">
       <div className="flex justify-between text-xs">
         <Label>{label}</Label>
-        <span className="text-muted-foreground">{sub}</span>
+        {sub && <span className="text-muted-foreground">{sub}</span>}
       </div>
       <Slider
         min={min}
