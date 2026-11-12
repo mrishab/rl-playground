@@ -42,6 +42,12 @@ jobs:
       - name: Run Tests
         run: npm test
 
+      - name: Run Cypress E2E Tests
+        run: |
+          npx vite preview --port 3000 --host 127.0.0.1 &
+          for i in {1..30}; do curl -sI http://127.0.0.1:3000/RL-Playground/ && break || sleep 1; done
+          npx cypress run --config baseUrl=http://127.0.0.1:3000/RL-Playground
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
