@@ -10,6 +10,7 @@ export function useGamesPage() {
   const pongState = useGamesStore((s) => s.pongState);
   const pacmanState = useGamesStore((s) => s.pacmanState);
   const chessState = useGamesStore((s) => s.chessState);
+  const strategyState = useGamesStore((s) => s.strategyState);
   const metrics = useGamesStore((s) => s.metrics[s.activeGame]);
 
   const setActiveGame = useGamesStore((s) => s.setActiveGame);
@@ -29,6 +30,7 @@ export function useGamesPage() {
     pongState,
     pacmanState,
     chessState,
+    strategyState,
     metrics,
     setActiveGame,
     setHyperparams,

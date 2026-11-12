@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 export type PageLayoutProps = {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   icon: LucideIcon;
   children: ReactNode;
   actions?: ReactNode;

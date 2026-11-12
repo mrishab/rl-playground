@@ -1,6 +1,5 @@
 import { Outlet } from "react-router-dom";
 import { SiteHeader } from "./components/site-header";
-import { BugReportBubble } from "./components/feedback/BugReportBubble";
 
 export function AppShell() {
   return (
@@ -9,7 +8,6 @@ export function AppShell() {
       <main className="flex-1 overflow-y-auto bg-background flex flex-col overscroll-contain">
         <Outlet />
       </main>
-      <BugReportBubble />
     </div>
   );
 }

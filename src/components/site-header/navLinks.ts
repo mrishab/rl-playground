@@ -9,21 +9,22 @@ import {
 
 export const NAV_LINKS = [
   {
-    to: "/gridworld",
-    label: "GridWorld",
-    icon: Grid3X3,
-    match: (p: string) =>
-      p === "/" || p.startsWith("/gridworld") || p.startsWith("/rl"),
-  },
-  {
     to: "/games",
     label: "Games",
     icon: Gamepad2,
     match: (p: string) =>
+      p === "/" ||
       p.startsWith("/games") ||
       p.startsWith("/pong") ||
       p.startsWith("/pacman") ||
-      p.startsWith("/chess"),
+      p.startsWith("/chess") ||
+      p.startsWith("/strategy"),
+  },
+  {
+    to: "/gridworld",
+    label: "GridWorld",
+    icon: Grid3X3,
+    match: (p: string) => p.startsWith("/gridworld") || p.startsWith("/rl"),
   },
   {
     to: "/bandits",

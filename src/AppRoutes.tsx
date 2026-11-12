@@ -12,9 +12,9 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={<Navigate to="/gridworld" replace />} />
-        <Route path="gridworld" element={<RLPage />} />
+        <Route index element={<Navigate to="/games" replace />} />
         <Route path="games" element={<GamesPage />} />
+        <Route path="gridworld" element={<RLPage />} />
         <Route path="bandits" element={<BanditsPage />} />
         <Route path="dp" element={<DPPage />} />
         <Route path="agents" element={<SavedAgentsPage />} />

@@ -13,11 +13,10 @@ export function RLPage() {
     <PageLayout
       icon={Bot}
       title="Reinforcement Learning GridWorld Lab"
-      subtitle="Interactive Bellman updates, Q-learning, SARSA, Double Q, and Dynamic Programming in the browser"
       hideActionGate
     >
-      <div className="space-y-4 max-w-6xl mx-auto w-full">
-        <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-3 max-w-6xl mx-auto w-full">
+        <div className="grid gap-3 lg:grid-cols-2">
           <RLConfigColumn store={p} />
           <RLGridCanvas store={p} />
         </div>

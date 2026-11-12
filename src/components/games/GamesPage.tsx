@@ -11,19 +11,15 @@ export function GamesPage() {
   const p = useGamesPage();
 
   return (
-    <PageLayout
-      icon={Gamepad2}
-      title="Competitive RL Games"
-      subtitle="Train reinforcement learning agents to beat opponents, navigate mazes, and master classic games"
-    >
-      <div className="space-y-4 max-w-4xl mx-auto w-full">
+    <PageLayout icon={Gamepad2} title="Competitive RL Games">
+      <div className="space-y-3 max-w-4xl mx-auto w-full">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <GameTabBar activeGame={p.activeGame} onSelect={p.setActiveGame} />
         </div>
 
         <GameMetricsRow metrics={p.metrics} />
 
-        <div className="p-4 rounded-xl border border-border/60 bg-card/60 backdrop-blur space-y-4">
+        <div className="p-3 rounded-xl border border-border/60 bg-card/60 backdrop-blur space-y-3">
           <GameControlsRow
             isPlaying={p.isPlaying}
             speed={p.speed}
@@ -39,6 +35,7 @@ export function GamesPage() {
             pongState={p.pongState}
             pacmanState={p.pacmanState}
             chessState={p.chessState}
+            strategyState={p.strategyState}
           />
 
           <GameHyperparamsCard

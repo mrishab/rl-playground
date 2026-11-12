@@ -59,13 +59,8 @@ export function SavedAgentsPage() {
   };
 
   return (
-    <PageLayout
-      icon={Cpu}
-      title="Saved Policies & Agents"
-      subtitle="Inspect, export, and load trained reinforcement learning policies"
-      hideActionGate
-    >
-      <div className="space-y-4 max-w-6xl mx-auto w-full">
+    <PageLayout icon={Cpu} title="Saved Policies & Agents" hideActionGate>
+      <div className="space-y-3 max-w-6xl mx-auto w-full">
         <AgentsToolbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

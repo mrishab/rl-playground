@@ -15,6 +15,7 @@ const testFiles = [
   "gamesPong.test.ts",
   "gamesPacman.test.ts",
   "gamesChess.test.ts",
+  "gamesStrategy.test.ts",
   "renderCheck.test.ts",
 ].map((f) => path.resolve(__dirname, f));
 

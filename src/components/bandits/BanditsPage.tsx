@@ -26,14 +26,9 @@ export function BanditsPage() {
   );
 
   return (
-    <PageLayout
-      icon={Target}
-      title="Multi-Armed Bandits Lab"
-      subtitle="Explore exploration vs. exploitation trade-offs across bandit strategies"
-      hideActionGate
-    >
-      <div className="space-y-4 max-w-6xl mx-auto w-full">
-        <div className="grid gap-4 md:grid-cols-3">
+    <PageLayout icon={Target} title="Multi-Armed Bandits Lab" hideActionGate>
+      <div className="space-y-3 max-w-6xl mx-auto w-full">
+        <div className="grid gap-3 md:grid-cols-3">
           <BanditStrategyCard
             store={store}
             animating={animating}

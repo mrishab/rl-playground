@@ -1,4 +1,4 @@
-import { Gamepad2, Ghost, Swords } from "lucide-react";
+import { Gamepad2, Ghost, Swords, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { GameId } from "@/lib/games/types";
 
@@ -11,6 +11,7 @@ const GAMES: { id: GameId; label: string; icon: typeof Gamepad2 }[] = [
   { id: "pong", label: "Pong (Ping Pong)", icon: Gamepad2 },
   { id: "pacman", label: "Pac-Man (Maze)", icon: Ghost },
   { id: "chess", label: "Grid Chess", icon: Swords },
+  { id: "strategy", label: "Grid Strategy", icon: Shield },
 ];
 
 export function GameTabBar({ activeGame, onSelect }: Props) {

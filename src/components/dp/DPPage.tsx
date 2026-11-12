@@ -18,14 +18,9 @@ export function DPPage() {
   };
 
   return (
-    <PageLayout
-      icon={GitCommit}
-      title="Dynamic Programming (Value Iteration) Lab"
-      subtitle="Model-based planning: compute optimal state-values V*(s) via Bellman backups"
-      hideActionGate
-    >
-      <div className="space-y-4 max-w-6xl mx-auto w-full">
-        <div className="grid gap-4 lg:grid-cols-3">
+    <PageLayout icon={GitCommit} title="Dynamic Programming" hideActionGate>
+      <div className="space-y-3 max-w-6xl mx-auto w-full">
+        <div className="grid gap-3 lg:grid-cols-3">
           <DPControlsCard store={store} />
           <DPGridCard
             store={store}

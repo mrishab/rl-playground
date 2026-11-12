@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { PongEngine } from "../lib/games/pongEngine";
 import { PacmanEngine } from "../lib/games/pacmanEngine";
 import { ChessEngine } from "../lib/games/chessEngine";
+import { StrategyEngine } from "../lib/games/strategyEngine";
 import type {
   GameHyperparameters,
   GameId,
@@ -9,6 +10,7 @@ import type {
   PacmanState,
   PongState,
   ChessState,
+  StrategyState,
 } from "../lib/games/types";
 
 const INITIAL_HYPERPARAMS: GameHyperparameters = {
@@ -34,6 +36,7 @@ const DEFAULT_METRIC: GameMetrics = {
 const pong = new PongEngine(INITIAL_HYPERPARAMS);
 const pacman = new PacmanEngine(INITIAL_HYPERPARAMS);
 const chess = new ChessEngine(INITIAL_HYPERPARAMS);
+const strategy = new StrategyEngine(INITIAL_HYPERPARAMS);
 
 export type GamesStoreState = {
   activeGame: GameId;
@@ -43,6 +46,7 @@ export type GamesStoreState = {
   pongState: PongState;
   pacmanState: PacmanState;
   chessState: ChessState;
+  strategyState: StrategyState;
   metrics: Record<GameId, GameMetrics>;
 
   setActiveGame: (game: GameId) => void;
@@ -64,10 +68,12 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
   pongState: pong.state,
   pacmanState: pacman.state,
   chessState: chess.state,
+  strategyState: strategy.state,
   metrics: {
     pong: { ...DEFAULT_METRIC },
     pacman: { ...DEFAULT_METRIC },
     chess: { ...DEFAULT_METRIC },
+    strategy: { ...DEFAULT_METRIC },
   },
 
   setActiveGame: (activeGame) => {
@@ -80,6 +86,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       pong.hyperparams = { ...next };
       pacman.hyperparams = { ...next };
       chess.hyperparams = { ...next };
+      strategy.hyperparams = { ...next };
       return { hyperparams: next };
     });
   },
@@ -142,7 +149,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
           },
         };
       });
-    } else {
+    } else if (activeGame === "chess") {
       const { reward } = chess.step();
       set((s) => {
         const m = s.metrics.chess;
@@ -154,6 +161,26 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               ...m,
               recentRewards: [...m.recentRewards.slice(-19), reward],
               qTableSize: chess.qTable.size,
+            },
+          },
+        };
+      });
+    } else {
+      const { reward } = strategy.step();
+      set((s) => {
+        const m = s.metrics.strategy;
+        const newScore = strategy.state.score;
+        const highScore = Math.max(m.highScore, newScore);
+        return {
+          strategyState: { ...strategy.state },
+          metrics: {
+            ...s.metrics,
+            strategy: {
+              ...m,
+              score: newScore,
+              highScore,
+              recentRewards: [...m.recentRewards.slice(-19), reward],
+              qTableSize: strategy.qTable.size,
             },
           },
         };
@@ -209,7 +236,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
           },
         };
       });
-    } else {
+    } else if (activeGame === "chess") {
       const res = chess.trainBatch(episodes);
       set((s) => {
         const m = s.metrics.chess;
@@ -234,6 +261,31 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
           },
         };
       });
+    } else {
+      const res = strategy.trainBatch(episodes);
+      set((s) => {
+        const m = s.metrics.strategy;
+        const totalEps = m.episodes + res.episodes;
+        const totalWins = m.wins + res.wins;
+        const totalLosses = m.losses + res.losses;
+        return {
+          strategyState: { ...strategy.state },
+          metrics: {
+            ...s.metrics,
+            strategy: {
+              ...m,
+              episodes: totalEps,
+              wins: totalWins,
+              losses: totalLosses,
+              winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
+              avgReward:
+                (m.avgReward * m.episodes + res.avgReward * res.episodes) /
+                totalEps,
+              qTableSize: strategy.qTable.size,
+            },
+          },
+        };
+      });
     }
   },
 
@@ -245,9 +297,12 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
     } else if (activeGame === "pacman") {
       pacman.resetEpisode();
       set({ pacmanState: { ...pacman.state } });
-    } else {
+    } else if (activeGame === "chess") {
       chess.resetEpisode();
       set({ chessState: { ...chess.state } });
+    } else {
+      strategy.resetEpisode();
+      set({ strategyState: { ...strategy.state } });
     }
   },
 
@@ -265,11 +320,17 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         pacmanState: { ...pacman.state },
         metrics: { ...s.metrics, pacman: { ...DEFAULT_METRIC } },
       }));
-    } else {
+    } else if (activeGame === "chess") {
       chess.resetAll();
       set((s) => ({
         chessState: { ...chess.state },
         metrics: { ...s.metrics, chess: { ...DEFAULT_METRIC } },
+      }));
+    } else {
+      strategy.resetAll();
+      set((s) => ({
+        strategyState: { ...strategy.state },
+        metrics: { ...s.metrics, strategy: { ...DEFAULT_METRIC } },
       }));
     }
   },

@@ -218,6 +218,14 @@ describe("Application State & Action Workflows with Zero Errors", () => {
       store.resetEpisode();
       assert.ok(useGamesStore.getState().chessState !== null);
 
+      // Test Strategy
+      store.setActiveGame("strategy");
+      store.stepSingle();
+      store.trainBatch(10);
+      assert.ok(useGamesStore.getState().metrics.strategy.episodes >= 10);
+      store.resetEpisode();
+      assert.ok(useGamesStore.getState().strategyState !== null);
+
       // Test hyperparam updates
       store.setHyperparams({ learningRate: 0.3, explorationRate: 0.2 });
       assert.equal(useGamesStore.getState().hyperparams.learningRate, 0.3);
@@ -227,6 +235,10 @@ describe("Application State & Action Workflows with Zero Errors", () => {
       assert.equal(useGamesStore.getState().speed, 5);
 
       // Test reset all
+      store.resetAll();
+      assert.equal(useGamesStore.getState().metrics.strategy.episodes, 0);
+
+      store.setActiveGame("chess");
       store.resetAll();
       assert.equal(useGamesStore.getState().metrics.chess.episodes, 0);
 

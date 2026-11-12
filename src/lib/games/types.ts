@@ -1,4 +1,4 @@
-export type GameId = "pong" | "pacman" | "chess";
+export type GameId = "pong" | "pacman" | "chess" | "strategy";
 
 export type RLAlgorithm = "q-learning" | "sarsa";
 
@@ -93,4 +93,32 @@ export type ChessState = {
   agentCaptures: ChessPieceType[];
   opponentCaptures: ChessPieceType[];
   lastReward: number;
+};
+
+// Strategy Game Types
+export type TacticalNode = {
+  id: string;
+  row: number;
+  col: number;
+  owner: "agent" | "opponent" | "neutral";
+};
+
+export type StrategyUnit = {
+  row: number;
+  col: number;
+  health: number;
+  maxHealth: number;
+};
+
+export type StrategyState = {
+  agent: StrategyUnit;
+  opponent: StrategyUnit;
+  nodes: TacticalNode[];
+  obstacles: [number, number][];
+  turn: number;
+  score: number;
+  isOver: boolean;
+  winner: "agent" | "opponent" | "draw" | null;
+  lastReward: number;
+  lastActionDesc: string;
 };

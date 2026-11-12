@@ -4,6 +4,7 @@ export const REDIRECTS = [
   { path: "pong", to: "/games" },
   { path: "pacman", to: "/games" },
   { path: "chess", to: "/games" },
+  { path: "strategy", to: "/games" },
   { path: "models", to: "/agents" },
   { path: "manage-models", to: "/agents" },
   { path: "data", to: "/gridworld" },
