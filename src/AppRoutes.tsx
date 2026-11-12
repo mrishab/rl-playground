@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { RLPage } from "@/components/rl/RLPage";
+import { GamesPage } from "@/components/games/GamesPage";
 import { BanditsPage } from "@/components/bandits/BanditsPage";
 import { DPPage } from "@/components/dp/DPPage";
 import { SavedAgentsPage } from "@/components/agents/SavedAgentsPage";
@@ -13,6 +14,7 @@ export function AppRoutes() {
       <Route element={<AppShell />}>
         <Route index element={<Navigate to="/gridworld" replace />} />
         <Route path="gridworld" element={<RLPage />} />
+        <Route path="games" element={<GamesPage />} />
         <Route path="bandits" element={<BanditsPage />} />
         <Route path="dp" element={<DPPage />} />
         <Route path="agents" element={<SavedAgentsPage />} />

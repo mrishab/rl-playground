@@ -1,6 +1,9 @@
 export const REDIRECTS = [
   { path: "rl", to: "/gridworld" },
   { path: "reinforcement-learning", to: "/gridworld" },
+  { path: "pong", to: "/games" },
+  { path: "pacman", to: "/games" },
+  { path: "chess", to: "/games" },
   { path: "models", to: "/agents" },
   { path: "manage-models", to: "/agents" },
   { path: "data", to: "/gridworld" },

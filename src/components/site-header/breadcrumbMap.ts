@@ -1,6 +1,10 @@
 export const BREADCRUMB_MAP = {
   gridworld: "GridWorld Lab",
   rl: "GridWorld Lab",
+  games: "Competitive Games",
+  pong: "Pong",
+  pacman: "Pac-Man",
+  chess: "Grid Chess",
   bandits: "Multi-Armed Bandits",
   dp: "Dynamic Programming",
   agents: "Saved Policies & Agents",

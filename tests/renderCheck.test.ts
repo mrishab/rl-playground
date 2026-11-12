@@ -4,6 +4,7 @@ import { useRLStore } from "../src/stores/rlStore.ts";
 import { useBanditStore } from "../src/stores/banditStore.ts";
 import { useDPStore } from "../src/stores/dpStore.ts";
 import { useSavedAgentsStore } from "../src/stores/savedAgentsStore.ts";
+import { useGamesStore } from "../src/stores/gamesStore.ts";
 
 describe("Application State & Action Workflows with Zero Errors", () => {
   it("interacts with GridWorld lab without console errors", () => {
@@ -177,6 +178,63 @@ describe("Application State & Action Workflows with Zero Errors", () => {
       assert.equal(useDPStore.getState().sweepCount, 0);
 
       assert.equal(errorLogs.length, 0, "Expected 0 console errors in DP lab");
+    } finally {
+      console.error = origError;
+    }
+  });
+
+  it("interacts with Competitive Games lab without console errors", () => {
+    const errorLogs: unknown[] = [];
+    const origError = console.error;
+    console.error = (...args: unknown[]) => {
+      errorLogs.push(args);
+      origError(...args);
+    };
+
+    try {
+      const store = useGamesStore.getState();
+
+      // Test Pong
+      store.setActiveGame("pong");
+      store.stepSingle();
+      store.trainBatch(20);
+      assert.ok(useGamesStore.getState().metrics.pong.episodes >= 20);
+      store.resetEpisode();
+      assert.ok(useGamesStore.getState().pongState !== null);
+
+      // Test Pac-Man
+      store.setActiveGame("pacman");
+      store.stepSingle();
+      store.trainBatch(15);
+      assert.ok(useGamesStore.getState().metrics.pacman.episodes >= 15);
+      store.resetEpisode();
+      assert.ok(useGamesStore.getState().pacmanState !== null);
+
+      // Test Chess
+      store.setActiveGame("chess");
+      store.stepSingle();
+      store.trainBatch(10);
+      assert.ok(useGamesStore.getState().metrics.chess.episodes >= 10);
+      store.resetEpisode();
+      assert.ok(useGamesStore.getState().chessState !== null);
+
+      // Test hyperparam updates
+      store.setHyperparams({ learningRate: 0.3, explorationRate: 0.2 });
+      assert.equal(useGamesStore.getState().hyperparams.learningRate, 0.3);
+
+      // Test speed toggle
+      store.setSpeed(5);
+      assert.equal(useGamesStore.getState().speed, 5);
+
+      // Test reset all
+      store.resetAll();
+      assert.equal(useGamesStore.getState().metrics.chess.episodes, 0);
+
+      assert.equal(
+        errorLogs.length,
+        0,
+        "Expected 0 console errors in Competitive Games lab",
+      );
     } finally {
       console.error = origError;
     }

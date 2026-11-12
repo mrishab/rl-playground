@@ -8,6 +8,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
       cy.contains("RL Playground").should("be.visible");
       cy.get("header").should("be.visible");
       cy.get("header nav").should("contain", "GridWorld");
+      cy.get("header nav").should("contain", "Games");
       cy.get("header nav").should("contain", "Bandits");
       cy.get("header nav").should("contain", "Dynamic Prog");
       cy.get("header nav").should("contain", "Agents");
@@ -298,6 +299,33 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
       // Retry
       cy.contains("button", "Retry").click();
       cy.contains("button", "Submit Answers").should("exist");
+    });
+  });
+
+  describe("Competitive RL Games Lab", () => {
+    beforeEach(() => {
+      cy.visit("games");
+    });
+
+    it("renders competitive games page, tabs, and initial Pong view", () => {
+      cy.contains("Competitive RL Games").should("be.visible");
+      cy.contains("Pong (Ping Pong)").should("be.visible");
+      cy.contains("Pac-Man (Maze)").should("be.visible");
+      cy.contains("Grid Chess").should("be.visible");
+      cy.contains("Live Run").should("be.visible");
+    });
+
+    it("switches to Pac-Man and Grid Chess tabs smoothly", () => {
+      cy.contains("Pac-Man (Maze)").click();
+      cy.contains("Pac-Man (Maze)").should("exist");
+
+      cy.contains("Grid Chess").click();
+      cy.contains("Grid Chess").should("exist");
+    });
+
+    it("executes batch training and updates metrics", () => {
+      cy.contains("button", "+50").click();
+      cy.contains("Episodes").should("exist");
     });
   });
 });
