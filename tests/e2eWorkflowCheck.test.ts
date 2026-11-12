@@ -31,9 +31,12 @@ describe("E2E Application Workflow & 0 Console Error Verification", () => {
     global.navigator = window.navigator as any;
     global.location = window.location as any;
     global.history = window.history as any;
+    global.HTMLFormElement = window.HTMLFormElement as any;
     global.HTMLElement = window.HTMLElement as any;
     global.HTMLInputElement = window.HTMLInputElement as any;
     global.HTMLButtonElement = window.HTMLButtonElement as any;
+    global.HTMLSelectElement = window.HTMLSelectElement as any;
+    global.HTMLAnchorElement = window.HTMLAnchorElement as any;
     global.customElements = window.customElements as any;
     global.ResizeObserver = class {
       observe() {}

@@ -67,16 +67,16 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
     it("switches environment presets: Cliff Walking, Frozen Lake, and Maze", () => {
       cy.contains("button", "Cliff Walking").click();
-      cy.contains("Environment Rules").should("be.visible");
+      cy.contains("Environment & Classic Presets").should("be.visible");
 
       cy.contains("button", "Frozen Lake").click();
-      cy.contains("Environment Rules").should("be.visible");
+      cy.contains("Environment & Classic Presets").should("be.visible");
 
       cy.contains("button", "Sutton-Barto").click();
-      cy.contains("Environment Rules").should("be.visible");
+      cy.contains("Environment & Classic Presets").should("be.visible");
 
       cy.contains("button", "Open Grid").click();
-      cy.contains("Environment Rules").should("be.visible");
+      cy.contains("Environment & Classic Presets").should("be.visible");
     });
 
     it("changes RL algorithms in the dropdown", () => {
@@ -105,11 +105,11 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     it("executes training steps and updates metrics and learning curve", () => {
       // Train 50 episodes
       cy.contains("button", "Train 50").click();
-      cy.contains("Total Episodes").should("be.visible");
+      cy.contains("Episodes").should("be.visible");
 
       // Verify episodes count updated
       cy.get("div")
-        .contains("Total Episodes")
+        .contains("Episodes")
         .parent()
         .find(".font-bold")
         .should("not.contain", "0");
@@ -132,7 +132,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
       // Reset Q-table
       cy.get("button[title='Reset Q-Table']").click();
       cy.get("div")
-        .contains("Total Episodes")
+        .contains("Episodes")
         .parent()
         .find(".font-bold")
         .should("contain", "0");
