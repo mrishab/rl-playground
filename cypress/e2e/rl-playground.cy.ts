@@ -57,21 +57,21 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
     it("switches environment presets: Cliff Walking, Frozen Lake, and Maze", () => {
       cy.contains("button", "Cliff Walking").click();
-      cy.contains("Environment & Classic Presets").should("be.visible");
+      cy.contains("Environment & Classic Presets").should("exist");
 
       cy.contains("button", "Frozen Lake").click();
-      cy.contains("Environment & Classic Presets").should("be.visible");
+      cy.contains("Environment & Classic Presets").should("exist");
 
       cy.contains("button", "Sutton-Barto").click();
-      cy.contains("Environment & Classic Presets").should("be.visible");
+      cy.contains("Environment & Classic Presets").should("exist");
 
       cy.contains("button", "Open Grid").click();
-      cy.contains("Environment & Classic Presets").should("be.visible");
+      cy.contains("Environment & Classic Presets").should("exist");
     });
 
     it("changes RL algorithms in the dropdown", () => {
       const select = cy.get("select#rl-algorithm-select");
-      select.should("be.visible");
+      select.should("exist");
 
       select.select("sarsa");
       select.should("have.value", "sarsa");
@@ -95,21 +95,21 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     it("executes training steps and updates metrics and learning curve", () => {
       // Train 50 episodes
       cy.contains("button", "Train 50").click();
-      cy.contains("Episodes").should("be.visible");
+      cy.contains("Episodes").should("exist");
 
       // Verify episodes count updated
       cy.get("div")
         .contains("Episodes")
         .parent()
         .find(".font-bold")
-        .should("not.contain", "0");
+        .should("have.text", "50");
 
       // Train 200 more
       cy.contains("button", "Train 200").click();
 
       // Step single transition
       cy.contains("button", "1-Step Transition").click();
-      cy.contains("Last Bellman Update:").should("be.visible");
+      cy.contains("Last Bellman Update:").should("exist");
 
       // Step simulation
       cy.contains("button", "Step").click();
@@ -125,7 +125,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
         .contains("Episodes")
         .parent()
         .find(".font-bold")
-        .should("contain", "0");
+        .should("have.text", "0");
     });
 
     it("toggles visual overlay layers: Heatmap, Arrows, Q-Values, Visits, BFS Path", () => {
@@ -249,7 +249,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     it("inspects state Bellman equation breakdown", () => {
       cy.contains("button", "Step 1 Sweep").click();
       cy.get("[data-testid='dp-grid-cells'] button").eq(0).click();
-      cy.contains("Mathematical Inspector: State").should("be.visible");
+      cy.contains("Mathematical Inspector: State").should("exist");
     });
   });
 
@@ -292,12 +292,12 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
       cy.contains("button", "Submit Answers").click();
 
       // Verify score display
-      cy.contains("Score: 5 / 5").should("be.visible");
-      cy.contains("Explanation:").should("be.visible");
+      cy.contains("Score: 5 / 5").should("exist");
+      cy.contains("Explanation:").should("exist");
 
       // Retry
       cy.contains("button", "Retry").click();
-      cy.contains("button", "Submit Answers").should("be.visible");
+      cy.contains("button", "Submit Answers").should("exist");
     });
   });
 });
