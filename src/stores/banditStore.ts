@@ -1,11 +1,11 @@
 import { create } from "zustand";
-import { BanditEngine } from "@/lib/rl/banditEngine";
+import { BanditEngine } from "../lib/rl/banditEngine";
 import type {
   BanditAlgorithm,
   BanditArm,
   BanditRunConfig,
   BanditStepResult,
-} from "@/lib/rl/types";
+} from "../lib/rl/types";
 
 export type BanditStoreState = {
   config: BanditRunConfig;

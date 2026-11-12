@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { DPEngine, type DPStateInspection } from "@/lib/rl/dpEngine";
-import type { Action, RLEnvironmentRules } from "@/lib/rl/types";
+import { DPEngine, type DPStateInspection } from "../lib/rl/dpEngine";
+import type { Action, RLEnvironmentRules } from "../lib/rl/types";
 
 export type DPStoreState = {
   rules: RLEnvironmentRules;

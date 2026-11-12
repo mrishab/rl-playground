@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type {
   SavedRLAgent,
   SavedAgentsStore,
-} from "@/types/savedAgent";
+} from "../types/savedAgent";
 
 const STORAGE_KEY = "rl_playground_saved_agents";
 
