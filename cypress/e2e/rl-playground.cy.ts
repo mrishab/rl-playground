@@ -48,6 +48,27 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
       cy.contains("GridWorld").click();
       cy.url().should("include", "/gridworld");
       cy.contains("Reinforcement Learning GridWorld Lab").should("be.visible");
+
+      cy.contains("Games").click();
+      cy.url().should("include", "/games");
+      cy.contains("RL Games & Environments").should("be.visible");
+    });
+
+    it("redirects legacy and deep shortcut routes to primary labs", () => {
+      cy.visit("rl");
+      cy.url().should("include", "/gridworld");
+
+      cy.visit("pong");
+      cy.url().should("include", "/games");
+
+      cy.visit("models");
+      cy.url().should("include", "/agents");
+
+      cy.visit("continuous-car");
+      cy.url().should("include", "/games");
+
+      cy.visit("ice-maze");
+      cy.url().should("include", "/games");
     });
   });
 
@@ -202,7 +223,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
       cy.contains("#10").should("be.visible");
     });
 
-    it("switches bandit algorithms and adjusts sliders", () => {
+    it("switches bandit algorithms and adjusts parameters", () => {
       cy.get("select#bandit-algorithm-select").select("ucb1");
       cy.contains("UCB Exploration Confidence (c)").should("be.visible");
 
@@ -211,6 +232,10 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
       cy.get("select#bandit-algorithm-select").select("thompson-sampling");
       cy.get("select#bandit-algorithm-select").select("epsilon-greedy");
+      cy.contains("Exploration Rate (ε):").should("be.visible");
+
+      // Toggle stationary switch
+      cy.get("#stationary-switch").click({ force: true });
     });
 
     it("steps bandit simulations and updates average reward", () => {
@@ -237,14 +262,19 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     it("renders state values and derived policy", () => {
       cy.contains("Value Iteration Controls").should("be.visible");
       cy.contains("State Values V*(s)").should("be.visible");
+      cy.contains("Discount Factor (γ):").should("be.visible");
     });
 
-    it("performs single sweep and runs to convergence", () => {
+    it("performs single sweep, runs to convergence, and resets", () => {
       cy.contains("button", "Step 1 Sweep").click();
       cy.contains("Sweeps").parent().find(".font-mono").should("contain", "1");
 
       cy.contains("button", "Run to Convergence").click();
       cy.contains("Converged").should("be.visible");
+
+      // Reset
+      cy.get("button[title='Reset DP Values']").click();
+      cy.contains("Sweeps").parent().find(".font-mono").should("contain", "0");
     });
 
     it("inspects state Bellman equation breakdown", () => {
@@ -256,16 +286,50 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
   describe("Saved Policies & Agents Management", () => {
     beforeEach(() => {
+      cy.clearLocalStorage();
       cy.visit("agents");
     });
 
-    it("renders saved agents page and search bar", () => {
+    it("renders saved agents empty state when no agents are saved", () => {
       cy.contains("Saved Policies & Agents").should("be.visible");
-      cy.get("input[placeholder*='Search']").should("be.visible");
+      cy.contains("No saved agents").should("be.visible");
+      cy.contains("Go to GridWorld Lab").should("be.visible");
     });
 
-    it("filters saved agents by search query", () => {
+    it("manages saved agent lifecycle: save in GridWorld, view, search, load, and delete", () => {
+      // 1. Save agent in GridWorld
+      cy.visit("gridworld");
+      cy.contains("button", "Train 50").click();
+      cy.contains("button", "Save").click();
+
+      // 2. Visit Saved Agents page
+      cy.visit("agents");
+      cy.contains("Saved Policies & Agents").should("be.visible");
+      cy.contains("Episodes").should("exist");
+      cy.contains("Load in GridWorld").should("be.visible");
+
+      // 3. Search and filter
       cy.get("input[placeholder*='Search']").type("Q-LEARNING");
+      cy.contains("Load in GridWorld").should("be.visible");
+
+      cy.get("input[placeholder*='Search']")
+        .clear()
+        .type("NONEXISTENT_QUERY_12345");
+      cy.contains("No saved agents").should("be.visible");
+
+      cy.get("input[placeholder*='Search']").clear();
+
+      // 4. Verify Export All button
+      cy.contains("button", "Export All").should("be.visible");
+
+      // 5. Load into GridWorld
+      cy.contains("button", "Load in GridWorld").click();
+      cy.url().should("include", "/gridworld");
+
+      // 6. Delete agent
+      cy.visit("agents");
+      cy.get("button[title='Delete Agent']").first().click();
+      cy.contains("No saved agents").should("be.visible");
     });
   });
 
@@ -326,7 +390,6 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     });
 
     it("toggles controller mode between RL and Search / A* Heuristics", () => {
-      cy.contains("button", "Ice Maze").click();
       // Toggle to search mode
       cy.contains("button", "Try with A* / Search").click();
       cy.contains("Search / Deterministic Mode Active").should("be.visible");
@@ -334,6 +397,37 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
       // Toggle back to RL mode
       cy.contains("button", "Train with RL").click();
       cy.contains("Reinforcement Learning Policy Active").should("be.visible");
+    });
+
+    it("supports shared game controls: speed selector, play/pause, reset, and hyperparams", () => {
+      // Speed selector
+      cy.contains("button", "2x").click();
+      cy.contains("button", "5x").click();
+      cy.contains("button", "1x").click();
+
+      // Play and pause
+      cy.contains("button", "Play").click();
+      cy.wait(300);
+      cy.contains("button", "Pause").click();
+
+      // Step & Train
+      cy.contains("button", "Step").click();
+      cy.contains("button", "+50").click();
+
+      // Reset episode
+      cy.get("button[title='Reset Current Episode']").click();
+
+      // Reset all
+      cy.get("button[title='Reset All Progress & Q-Table']").click();
+      cy.get("div")
+        .contains("Episodes")
+        .parent()
+        .find(".font-bold")
+        .should("have.text", "0");
+
+      // Hyperparameters card
+      cy.contains("Game Hyperparameters").should("be.visible");
+      cy.contains("Learning Rate (α):").should("be.visible");
     });
 
     describe("Game 1: The Stochastic Gridworld with Slippery Tiles (The Ice Maze)", () => {
@@ -422,20 +516,28 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     });
 
     describe("Classic Games: Pong, Pac-Man, Grid Chess, and Grid Strategy", () => {
-      it("switches through all classic games and trains episodes", () => {
+      it("switches through all classic games, verifies comparison banner, and trains episodes", () => {
         cy.contains("button", "Pong").click();
+        cy.contains("Reinforcement Learning Policy Active").should("exist");
         cy.contains("button", "Step").click();
 
         cy.contains("button", "Pac-Man").click();
+        cy.contains("Reinforcement Learning Policy Active").should("exist");
         cy.contains("button", "Step").click();
 
         cy.contains("button", "Grid Chess").click();
+        cy.contains("Reinforcement Learning Policy Active").should("exist");
         cy.contains("button", "Step").click();
 
         cy.contains("button", "Grid Strategy").click();
+        cy.contains("Reinforcement Learning Policy Active").should("exist");
         cy.contains("button", "Step").click();
         cy.contains("button", "+50").click();
         cy.contains("Episodes").should("exist");
+
+        // Toggle search mode and verify search comparison banner in classic games
+        cy.contains("button", "Try with A* / Search").click();
+        cy.contains("Search / Deterministic Mode Active").should("be.visible");
       });
     });
   });

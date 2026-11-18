@@ -113,7 +113,6 @@ export class ContinuousCarEngine {
 
     const controller = this.state.controller;
     const nn = this.state.neuralNetwork;
-    const laps = this.state.lapCount;
 
     this.state = {
       ...this.createInitialState(),
@@ -122,7 +121,7 @@ export class ContinuousCarEngine {
       angle: startAngle,
       controller,
       neuralNetwork: nn,
-      lapCount: laps,
+      lapCount: 0,
       trackPath: [[startX, startY]],
     };
     const sensors = this.computeSensors(startX, startY, startAngle);

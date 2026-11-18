@@ -22,4 +22,24 @@ export const SEARCH_COMPARISONS: Record<
       "Discrete search trees cannot handle continuous floating-point state-actions, causing jerky oscillations into walls.",
     rl: "Deep RL / Function approximation maps continuous wall-distance sensors to smooth steering angles.",
   },
+  pong: {
+    search:
+      "Exact trajectory search requires forward physics simulation at high FPS. Any frame drop or latency breaks paddle tracking.",
+    rl: "RL learns an instant reactive policy mapping ball position and velocity directly to paddle velocity in constant time.",
+  },
+  pacman: {
+    search:
+      "Deterministic BFS finds the shortest path to pellets but gets trapped in dead ends by dynamic hunting ghosts.",
+    rl: "RL balances long-term ghost avoidance penalties with pellet reward accumulation under stochastic ghost moves.",
+  },
+  chess: {
+    search:
+      "Alpha-Beta / Minimax search trees suffer exponential branching factor explosion without deep position evaluation.",
+    rl: "RL policy bootstraps positional advantage directly from game outcomes, developing tactical piece synergy.",
+  },
+  strategy: {
+    search:
+      "Simultaneous-move combat trees grow exponentially with unit combinations and partial fog of war.",
+    rl: "Multi-agent RL discovers emergent flanking, focus fire, and tactical retreat heuristics.",
+  },
 };

@@ -81,7 +81,7 @@ export type GamesStoreState = {
 };
 
 export const useGamesStore = create<GamesStoreState>((set, get) => ({
-  activeGame: "pong",
+  activeGame: "ice-maze",
   isPlaying: false,
   speed: 1,
   controllerMode: "rl",
