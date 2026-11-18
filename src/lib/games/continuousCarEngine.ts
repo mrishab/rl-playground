@@ -19,6 +19,7 @@ export class ContinuousCarEngine {
   searchStepCounter = 0;
   searchDiscreteSteer = 0;
   villainErrorRate = 0.1; // Default 10% configurable
+  isTraining = false;
 
   constructor(hyperparams?: Partial<GameHyperparameters>) {
     this.hyperparams = {
@@ -47,31 +48,26 @@ export class ContinuousCarEngine {
   createInitialNeuralNetwork(): NeuralNetworkApproximator {
     // 4 inputs: [normLeft, normRight, normForward, balanceDiff]
     // 8 hidden neurons
+    // Naive initialization: car starts not knowing how to drive
     const weightsIn: number[][] = [];
     const biasHidden: number[] = [];
     for (let h = 0; h < 8; h++) {
       biasHidden.push(0.0);
       const row: number[] = [];
       for (let i = 0; i < 4; i++) {
-        row.push((Math.random() * 2 - 1) * 0.4);
+        row.push((Math.random() * 2 - 1) * 0.25);
       }
       weightsIn.push(row);
     }
 
-    // Output steering weights
+    // Output steering weights - naive initialization
     const weightsOut: number[] = [];
-    // Output throttle weights
+    // Output throttle weights - naive initialization
     const weightsThrottle: number[] = [];
     for (let h = 0; h < 8; h++) {
-      weightsOut.push((Math.random() * 2 - 1) * 0.5);
-      weightsThrottle.push((Math.random() * 2 - 1) * 0.3);
+      weightsOut.push((Math.random() * 2 - 1) * 0.1);
+      weightsThrottle.push((Math.random() * 2 - 1) * 0.1);
     }
-
-    // Sensory bias: keep car centered away from barriers
-    weightsIn[0][0] = -1.2; // close left -> negative
-    weightsIn[0][1] = 1.2; // close right -> positive
-    weightsIn[0][3] = -1.5; // balance diff
-    weightsOut[0] = 0.8;
 
     return {
       weightsIn,
@@ -79,7 +75,7 @@ export class ContinuousCarEngine {
       weightsOut,
       biasOut: 0.0,
       weightsThrottle,
-      biasThrottle: 0.3,
+      biasThrottle: 0.1,
       hiddenActivations: new Array(8).fill(0),
     };
   }
@@ -427,14 +423,21 @@ export class ContinuousCarEngine {
         const nx = dx / dist;
         const ny = dy / dist;
 
-        const vxA = s.speed * Math.cos(s.angle);
-        const vyA = s.speed * Math.sin(s.angle);
-        const vxV = v.speed * Math.cos(v.angle);
-        const vyV = v.speed * Math.sin(v.angle);
+        const uxA = Math.cos(s.angle);
+        const uyA = Math.sin(s.angle);
+        const uxV = Math.cos(v.angle);
+        const uyV = Math.sin(v.angle);
 
-        const approach = (vxA - vxV) * nx + (vyA - vyV) * ny;
+        // Directed velocity towards the other vehicle
+        const dotA = uxA * nx + uyA * ny;
+        const impactA = s.isBoosting
+          ? s.speed * 1.5
+          : s.speed * Math.max(0, dotA);
 
-        if (approach > 0.3 || s.isBoosting) {
+        const dotV = uxV * -nx + uyV * -ny;
+        const impactV = v.speed * Math.max(0, dotV);
+
+        if (impactA > impactV || s.isBoosting) {
           // Agent bumps villain: villain takes a hit, agent loses momentum
           v.speed = Math.max(1.4, v.speed * 0.58);
           v.angle += Math.random() > 0.5 ? 0.45 : -0.45;
@@ -447,7 +450,7 @@ export class ContinuousCarEngine {
           // Agent cost: losing momentum
           if (s.isBoosting) {
             s.isBoosting = false;
-            s.speed = Math.max(2.2, s.speed * 0.65);
+            s.speed = Math.max(2.0, s.speed * 0.65);
           } else {
             s.speed = Math.max(1.4, s.speed * 0.72);
           }
@@ -524,16 +527,10 @@ export class ContinuousCarEngine {
     if (s.controller === "search") {
       steering = this.selectSteeringSearch();
       s.speed = 3.3; // Discrete search runs fixed speed without traction control
-      s.throttle = 1.0;
+      throttle = 1.0;
     } else if (steeringOverride !== undefined) {
       steering = steeringOverride;
       throttle = throttleOverride !== undefined ? throttleOverride : 0.2;
-      if (throttle > 0) {
-        s.speed = Math.min(4.3, s.speed + throttle * 0.16);
-      } else {
-        s.speed = Math.max(1.4, s.speed + throttle * 0.28);
-      }
-      s.throttle = Number(throttle.toFixed(2));
     } else {
       const action = this.selectActionRL(explore);
       steering = action.steering;
@@ -542,17 +539,19 @@ export class ContinuousCarEngine {
       if (action.shouldBoost) {
         this.triggerBoost();
       }
+    }
 
-      // Throttle & Speed update
+    if (s.controller !== "search") {
+      // Throttle & Speed modulation
       if (throttle > 0) {
         s.speed = Math.min(4.3, s.speed + throttle * 0.16);
       } else {
         s.speed = Math.max(1.4, s.speed + throttle * 0.28);
       }
 
-      // Boost update
+      // Boost mechanics (/boost/boost)
       if (s.isBoosting) {
-        s.speed = Math.min(5.4, s.speed + 0.6);
+        s.speed = Math.min(5.4, s.speed + 0.5);
         s.boostMeter = Math.max(0, s.boostMeter - 2.5);
         if (s.boostMeter <= 0) {
           s.isBoosting = false;
@@ -560,9 +559,9 @@ export class ContinuousCarEngine {
       } else {
         s.boostMeter = Math.min(100, s.boostMeter + 0.3);
       }
-      s.throttle = Number(throttle.toFixed(2));
     }
 
+    s.throttle = Number(throttle.toFixed(2));
     s.steering = Number(steering.toFixed(3));
     s.speed = Number(s.speed.toFixed(2));
 
@@ -659,17 +658,29 @@ export class ContinuousCarEngine {
 
     s.lastReward = Number(reward.toFixed(2));
 
-    // Neural Network Policy Gradient Update
-    if (s.controller === "rl" && !s.isCollided) {
+    // Neural Network Policy Gradient Update (active during training or exploration)
+    if (s.controller === "rl" && (explore || this.isTraining)) {
       const lr = this.hyperparams.learningRate * 0.1;
       const nn = s.neuralNetwork;
       const delta = (s.sensorLeft - s.sensorRight) / 40.0;
 
-      for (let h = 0; h < 8; h++) {
-        nn.weightsOut[h] += lr * reward * nn.hiddenActivations[h] * -delta;
-        if (nn.weightsThrottle) {
-          nn.weightsThrottle[h] +=
-            lr * reward * nn.hiddenActivations[h] * (1 - s.lossOfControl);
+      if (s.isCollided) {
+        // Crash penalty update: strongly steer away from collided barrier & reduce throttle
+        for (let h = 0; h < 8; h++) {
+          nn.weightsOut[h] += lr * -20.0 * nn.hiddenActivations[h] * -delta;
+          if (nn.weightsThrottle) {
+            nn.weightsThrottle[h] -= lr * 5.0 * nn.hiddenActivations[h];
+          }
+        }
+      } else {
+        // Active balance: accelerate when grip is intact, brake/ease off when skidding
+        const gripBalance = 1.0 - 2.5 * s.lossOfControl;
+        for (let h = 0; h < 8; h++) {
+          nn.weightsOut[h] += lr * reward * nn.hiddenActivations[h] * -delta;
+          if (nn.weightsThrottle) {
+            nn.weightsThrottle[h] +=
+              lr * reward * nn.hiddenActivations[h] * gripBalance;
+          }
         }
       }
     }
@@ -686,6 +697,7 @@ export class ContinuousCarEngine {
     let totalReward = 0;
     const prevController = this.state.controller;
     this.state.controller = "rl";
+    this.isTraining = true;
 
     for (let e = 0; e < episodes; e++) {
       this.resetEpisode();
@@ -711,6 +723,7 @@ export class ContinuousCarEngine {
       );
     }
 
+    this.isTraining = false;
     this.state.controller = prevController;
     return {
       episodes,

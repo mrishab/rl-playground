@@ -115,8 +115,29 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     );
   });
 
-  it("RL neural network controller smoothly navigates continuous track without collision", () => {
+  it("starts not knowing how to drive and crashes without training", () => {
     const engine = new ContinuousCarEngine();
+    engine.setController("rl");
+
+    let crashed = false;
+    for (let s = 0; s < 60; s++) {
+      const { done } = engine.step();
+      if (done && engine.state.isCollided) {
+        crashed = true;
+        break;
+      }
+    }
+    assert.equal(
+      crashed,
+      true,
+      "Untrained car should not know how to drive and crash into barrier",
+    );
+  });
+
+  it("RL neural network controller smoothly navigates continuous track without collision after training", () => {
+    const engine = new ContinuousCarEngine();
+    engine.trainBatch(15);
+    engine.resetEpisode();
     engine.setController("rl");
 
     let stepsCompleted = 0;
@@ -196,13 +217,16 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     const engine = new ContinuousCarEngine();
     const villain = engine.state.villains[0];
 
-    // Place villain right behind agent, approaching agent
-    villain.x = engine.state.x + 2;
+    // Place villain right behind agent heading East, approaching agent
+    villain.x = engine.state.x - 5;
     villain.y = engine.state.y;
+    villain.angle = 0;
     villain.speed = 4.0;
+    engine.state.angle = 0;
     engine.state.speed = 2.0;
 
     const initialAngle = engine.state.angle;
+    const initialSpeed = engine.state.speed;
     const rewardBefore = engine.handleCarBumps();
 
     assert.ok(
@@ -215,6 +239,10 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
       engine.state.angle !== initialAngle,
       "Heading should be deflected",
     );
+    assert.ok(
+      engine.state.speed < initialSpeed,
+      "Speed should be reduced by bump",
+    );
   });
 
   it("handles bump when agent bumps villain (villain deflected, agent loses momentum)", () => {
@@ -224,7 +252,9 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     // Place agent moving faster directly behind villain
     villain.x = engine.state.x + 5;
     villain.y = engine.state.y;
+    villain.angle = 0;
     villain.speed = 2.0;
+    engine.state.angle = 0;
     engine.state.speed = 4.2;
 
     const reward = engine.handleCarBumps();
@@ -268,5 +298,55 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
       1,
       "Agent should lead in 1st place",
     );
+  });
+
+  it("handles 0% villain error rate where villains drive smoothly without errors", () => {
+    const engine = new ContinuousCarEngine();
+    engine.setVillainErrorRate(0);
+    assert.equal(engine.villainErrorRate, 0);
+
+    for (let s = 0; s < 50; s++) {
+      engine.stepVillains();
+    }
+    const errors = engine.state.villains.filter((v) => v.isError);
+    assert.equal(
+      errors.length,
+      0,
+      "No villains should enter error state at 0% rate",
+    );
+  });
+
+  it("handles 50% villain error rate where villains frequently encounter errors", () => {
+    const engine = new ContinuousCarEngine();
+    engine.setVillainErrorRate(0.5);
+    assert.equal(engine.villainErrorRate, 0.5);
+
+    let errorEvents = 0;
+    for (let s = 0; s < 60; s++) {
+      engine.stepVillains();
+      if (engine.state.villains.some((v) => v.isError)) {
+        errorEvents++;
+      }
+    }
+    assert.ok(errorEvents > 0, "Villains should enter error state at 50% rate");
+  });
+
+  it("learns to balance speed against loss of control and overtakes villains to win", () => {
+    const engine = new ContinuousCarEngine();
+    const result = engine.trainBatch(20);
+    assert.ok(result.wins > 0, "Agent should win races after training");
+
+    engine.resetEpisode();
+    let steps = 0;
+    while (!engine.state.isOver && steps < 200) {
+      engine.step();
+      steps++;
+    }
+    assert.equal(
+      engine.state.isCollided,
+      false,
+      "Trained agent should navigate safely",
+    );
+    assert.ok(engine.state.lapCount > 0, "Trained agent should complete laps");
   });
 });
