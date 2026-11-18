@@ -326,6 +326,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     });
 
     it("toggles controller mode between RL and Search / A* Heuristics", () => {
+      cy.contains("button", "Ice Maze").click();
       // Toggle to search mode
       cy.contains("button", "Try with A* / Search").click();
       cy.contains("Search / Deterministic Mode Active").should("be.visible");
@@ -368,9 +369,9 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
 
       it("renders slot reels, bankroll, and all 4 slot machine arm cards", () => {
         cy.contains("Lucky Sevens").should("be.visible");
-        cy.contains("Wild Cherry").should("be.visible");
-        cy.contains("Neon Diamonds").should("be.visible");
-        cy.contains("Golden Horseshoe").should("be.visible");
+        cy.contains("Cherry Blitz").should("be.visible");
+        cy.contains("Golden Lemon").should("be.visible");
+        cy.contains("Diamond Bait").should("be.visible");
         cy.contains("Pulls:").should("be.visible");
         cy.contains("EV:").should("be.visible");
       });
