@@ -14,7 +14,9 @@ export function ContinuousCarControls({
   onErrorRateChange,
   onBoost,
 }: Props) {
-  const bumpNotice = state.lastBump ? state.lastBump.description : null;
+  const isRecentBump =
+    state.lastBump && Date.now() - state.lastBump.timestamp < 2500;
+  const bumpNotice = isRecentBump ? state.lastBump!.description : null;
 
   return (
     <div className="space-y-2 pt-1 border-t border-border/40 font-mono text-xs">

@@ -422,6 +422,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               ...m,
               episodes: totalEps,
               wins: totalWins,
+              losses: m.losses + (res.episodes - res.wins),
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
               score: pong.state.agentScore,
               highScore: Math.max(m.highScore, pong.state.agentScore),
@@ -447,6 +448,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               ...m,
               episodes: totalEps,
               wins: totalWins,
+              losses: m.losses + (res.episodes - res.wins),
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
               score: pacman.state.score,
               highScore: Math.max(m.highScore, pacman.state.score),
@@ -529,6 +531,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               ...m,
               episodes: totalEps,
               wins: totalWins,
+              losses: m.losses + (res.episodes - res.wins),
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
               score: iceMaze.state.won ? 100 : 0,
               highScore: Math.max(m.highScore, iceMaze.state.won ? 100 : 0),
@@ -554,6 +557,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               ...m,
               episodes: totalEps,
               wins: totalWins,
+              losses: m.losses + (res.episodes - res.wins),
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
               score: Math.round(slotMachine.state.bankroll),
               highScore: Math.max(
@@ -582,6 +586,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               ...m,
               episodes: totalEps,
               wins: totalWins,
+              losses: m.losses + (res.episodes - res.wins),
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
               score: Math.round(lemonade.state.cashBalance),
               highScore: Math.max(
@@ -610,6 +615,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
               ...m,
               episodes: totalEps,
               wins: totalWins,
+              losses: m.losses + (res.episodes - res.wins),
               winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
               score: continuousCar.state.lapCount * 50,
               highScore: Math.max(

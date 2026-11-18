@@ -20,6 +20,7 @@ export class ContinuousCarEngine {
   searchDiscreteSteer = 0;
   villainErrorRate = 0.1; // Default 10% configurable
   isTraining = false;
+  agentLapMidpoint = false;
 
   constructor(hyperparams?: Partial<GameHyperparameters>) {
     this.hyperparams = {
@@ -73,9 +74,9 @@ export class ContinuousCarEngine {
       weightsIn,
       biasHidden,
       weightsOut,
-      biasOut: 0.0,
+      biasOut: -0.025,
       weightsThrottle,
-      biasThrottle: 0.1,
+      biasThrottle: 0.25,
       hiddenActivations: new Array(8).fill(0),
     };
   }
@@ -178,6 +179,7 @@ export class ContinuousCarEngine {
   resetEpisode(): void {
     this.searchStepCounter = 0;
     this.searchDiscreteSteer = 0;
+    this.agentLapMidpoint = false;
     const trackMidRadius = (this.innerRadius + this.outerRadius) / 2;
     const startX = this.centerX;
     const startY = this.centerY - trackMidRadius;
@@ -207,6 +209,7 @@ export class ContinuousCarEngine {
   resetAll(): void {
     this.searchStepCounter = 0;
     this.searchDiscreteSteer = 0;
+    this.agentLapMidpoint = false;
     const controller = this.state.controller;
     this.state = this.createInitialState();
     this.state.controller = controller;
@@ -435,7 +438,8 @@ export class ContinuousCarEngine {
 
         if (impactV > impactA && !s.isBoosting) {
           // Villain bumps agent: agent takes hit in direction and speed
-          s.angle += Math.random() > 0.5 ? 0.18 : -0.18;
+          const deflSign = rxA * nx + ryA * ny >= 0 ? -1 : 1;
+          s.angle += deflSign * 0.08;
           s.speed = Math.max(1.2, s.speed * 0.82);
           v.speed = Math.max(2.8, v.speed * 0.88);
           const currentR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
@@ -548,6 +552,9 @@ export class ContinuousCarEngine {
     throttleOverride?: number,
   ): { reward: number; done: boolean } {
     const s = this.state;
+    if (s.lastBump && Date.now() - s.lastBump.timestamp > 2500) {
+      s.lastBump = null;
+    }
     if (s.isOver) {
       this.resetEpisode();
       return { reward: 0, done: true };
@@ -681,20 +688,27 @@ export class ContinuousCarEngine {
       // Lap tracking
       let currentProgress = (angleFromCenter + Math.PI / 2) / (2 * Math.PI);
       if (currentProgress < 0) currentProgress += 1;
-      if (s.lapProgress > 0.85 && currentProgress < 0.15) {
+      if (currentProgress > 0.35 && currentProgress < 0.65) {
+        this.agentLapMidpoint = true;
+      }
+      if (
+        s.lapProgress > 0.85 &&
+        currentProgress < 0.15 &&
+        this.agentLapMidpoint
+      ) {
         s.lapCount += 1;
+        this.agentLapMidpoint = false;
         reward += s.racePosition === 1 ? 50.0 : 15.0;
         s.isOver = true;
         done = true;
       }
       s.lapProgress = currentProgress;
 
-      if (s.villains.some((v) => v.lapCount >= 1) && s.racePosition > 1) {
+      if (
+        s.villains.some((v) => v.lapCount >= 1 && v.lapProgress < 0.05) &&
+        s.racePosition > 1
+      ) {
         reward -= 25.0;
-        if (s.villains.some((v) => v.totalProgress >= 1.35)) {
-          s.isOver = true;
-          done = true;
-        }
       }
     }
 
@@ -718,7 +732,8 @@ export class ContinuousCarEngine {
         // Active balance: accelerate when grip is intact, brake/ease off when skidding
         const gripBalance = 1.0 - 2.5 * s.lossOfControl;
         for (let h = 0; h < 8; h++) {
-          nn.weightsOut[h] += lr * reward * nn.hiddenActivations[h] * -delta;
+          nn.weightsOut[h] +=
+            lr * Math.max(0.5, reward) * nn.hiddenActivations[h] * -delta;
           if (nn.weightsThrottle) {
             nn.weightsThrottle[h] +=
               lr * reward * nn.hiddenActivations[h] * gripBalance;
