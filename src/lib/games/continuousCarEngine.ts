@@ -231,7 +231,10 @@ export class ContinuousCarEngine {
     return this.searchDiscreteSteer;
   }
 
-  step(steeringOverride?: number): { reward: number; done: boolean } {
+  step(
+    steeringOverride?: number,
+    explore = false,
+  ): { reward: number; done: boolean } {
     const s = this.state;
     if (s.isOver) {
       this.resetEpisode();
@@ -244,7 +247,7 @@ export class ContinuousCarEngine {
     } else if (s.controller === "search") {
       steering = this.selectSteeringSearch();
     } else {
-      steering = this.selectSteeringRL(true);
+      steering = this.selectSteeringRL(explore);
     }
 
     s.steering = Number(steering.toFixed(3));
@@ -338,7 +341,7 @@ export class ContinuousCarEngine {
       const startLaps = this.state.lapCount;
 
       while (!this.state.isOver && steps < 200) {
-        const { reward, done } = this.step();
+        const { reward, done } = this.step(undefined, true);
         epReward += reward;
         steps++;
         if (done) break;

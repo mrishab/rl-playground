@@ -406,7 +406,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
       cy.contains("button", "1x").click();
 
       // Play and pause
-      cy.contains("button", "Play").click();
+      cy.contains("button", "Live Run").click();
       cy.wait(300);
       cy.contains("button", "Pause").click();
 
@@ -415,10 +415,10 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
       cy.contains("button", "+50").click();
 
       // Reset episode
-      cy.get("button[title='Reset Current Episode']").click();
+      cy.get("button[title='Reset Game Episode']").click();
 
       // Reset all
-      cy.get("button[title='Reset All Progress & Q-Table']").click();
+      cy.get("button[title='Reset Q-Table']").click();
       cy.get("div")
         .contains("Episodes")
         .parent()
