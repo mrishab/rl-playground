@@ -11,10 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import type { GameId } from "@/lib/games/types";
 
-type Props = {
+interface Props {
   activeGame: GameId;
   onSelect: (game: GameId) => void;
-};
+}
 
 const GAMES: { id: GameId; label: string; icon: typeof Gamepad2 }[] = [
   { id: "ice-maze", label: "Ice Maze", icon: Snowflake },
@@ -35,7 +35,7 @@ export function GameTabBar({ activeGame, onSelect }: Props) {
           key={id}
           size="sm"
           variant={activeGame === id ? "default" : "ghost"}
-          className={`h-7 px-2.5 text-xs gap-1.5 font-medium transition-all ${
+          className={`h-7 px-2.5 text-xs gap-1.5 font-medium transition-[color,background-color,border-color,box-shadow] duration-150 ease-out ${
             activeGame === id
               ? "shadow-xs font-semibold"
               : "text-muted-foreground"

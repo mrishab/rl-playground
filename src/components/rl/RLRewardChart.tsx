@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { RLChartMetricToggle, type ChartMetric } from "./RLChartMetricToggle";
+import { RLChartSvg } from "./RLChartSvg";
 
-type Props = {
+interface Props {
   rewards: number[];
   steps?: number[];
   tdErrors?: number[];
-};
+}
 
 export function RLRewardChart({ rewards, steps = [], tdErrors = [] }: Props) {
-  const [metric, setMetric] = useState<"reward" | "steps" | "td">("reward");
-
-  const currentData =
+  const [metric, setMetric] = useState<ChartMetric>("reward");
+  const data =
     metric === "reward" ? rewards : metric === "steps" ? steps : tdErrors;
 
-  if (currentData.length < 2) {
+  if (data.length < 2) {
     return (
       <Card className="border-dashed">
         <CardContent className="flex h-28 items-center justify-center p-4 text-xs text-muted-foreground">
@@ -24,16 +24,14 @@ export function RLRewardChart({ rewards, steps = [], tdErrors = [] }: Props) {
     );
   }
 
-  const minVal = Math.min(...currentData);
-  const maxVal = Math.max(...currentData);
+  const minVal = Math.min(...data);
+  const maxVal = Math.max(...data);
   const range = Math.max(1e-4, maxVal - minVal);
-
-  const points = currentData.map((v, i) => {
-    const x = (i / (currentData.length - 1)) * 100;
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * 100;
     const y = 92 - ((v - minVal) / range) * 84;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
-
   const pathD = `M ${points.join(" L ")}`;
 
   return (
@@ -43,60 +41,15 @@ export function RLRewardChart({ rewards, steps = [], tdErrors = [] }: Props) {
           <CardTitle className="text-xs font-medium">
             Training Analytics
           </CardTitle>
-          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded border text-[11px]">
-            <Button
-              size="sm"
-              variant={metric === "reward" ? "default" : "ghost"}
-              className="h-5 px-1.5 text-[10px]"
-              onClick={() => setMetric("reward")}
-            >
-              Reward
-            </Button>
-            <Button
-              size="sm"
-              variant={metric === "steps" ? "default" : "ghost"}
-              className="h-5 px-1.5 text-[10px]"
-              onClick={() => setMetric("steps")}
-            >
-              Steps
-            </Button>
-            <Button
-              size="sm"
-              variant={metric === "td" ? "default" : "ghost"}
-              className="h-5 px-1.5 text-[10px]"
-              onClick={() => setMetric("td")}
-            >
-              TD Error
-            </Button>
-          </div>
+          <RLChartMetricToggle metric={metric} onSelect={setMetric} />
         </div>
         <span className="text-[10px] text-muted-foreground font-mono">
           min: {minVal.toFixed(1)} | max: {maxVal.toFixed(1)} | total:{" "}
-          {currentData.length}
+          {data.length}
         </span>
       </CardHeader>
       <CardContent className="p-3 pt-1">
-        <div className="h-28 w-full bg-muted/20 rounded border border-border/40 overflow-hidden p-1 relative">
-          <svg
-            className="w-full h-full"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-          >
-            <path
-              d={pathD}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className={
-                metric === "reward"
-                  ? "text-primary"
-                  : metric === "steps"
-                    ? "text-blue-500"
-                    : "text-amber-500"
-              }
-            />
-          </svg>
-        </div>
+        <RLChartSvg pathD={pathD} metric={metric} />
       </CardContent>
     </Card>
   );

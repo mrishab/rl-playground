@@ -125,6 +125,7 @@ export type BanditRunConfig = {
   isStationary: boolean;
   driftStdDev: number;
 };
+export type BanditConfig = BanditRunConfig;
 
 export type BanditStepResult = {
   step: number;
@@ -138,12 +139,20 @@ export type BanditStepResult = {
 // Dynamic Programming Types
 export type DPAlgorithm = "value-iteration" | "policy-iteration";
 
+export type GridCoordKey = `${number},${number}`;
+export type StateKey = GridCoordKey | (string & {});
+export type StateValueTable = Record<StateKey, number>;
+export type StatePolicyTable = Record<StateKey, Action>;
+export type StateVisitTable = Record<StateKey, number>;
+export type QActionValues = [number, number, number, number];
+export type QTable = Record<StateKey, QActionValues>;
+
 export type DPSweepResult = {
   sweep: number;
   delta: number;
   converged: boolean;
-  values: Record<string, number>;
-  policy: Record<string, Action>;
+  values: StateValueTable;
+  policy: StatePolicyTable;
 };
 
 // Saved Agent Types
@@ -174,5 +183,5 @@ export type SavedRLAgent = {
     hazards: [number, number][];
     obstacles: [number, number][];
   };
-  qTable: Record<string, [number, number, number, number]>;
+  qTable: QTable;
 };

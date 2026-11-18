@@ -1,9 +1,9 @@
-type Props = {
+interface Props {
   opponentScore: number;
   agentScore: number;
   rallyLength: number;
   maxRally: number;
-};
+}
 
 export function PongScoreboard({
   opponentScore,
@@ -16,7 +16,7 @@ export function PongScoreboard({
       <text
         x="90"
         y="24"
-        fill="#94a3b8"
+        fill="hsl(var(--muted-foreground))"
         fontSize="16"
         fontFamily="monospace"
         textAnchor="middle"
@@ -27,7 +27,7 @@ export function PongScoreboard({
       <text
         x="150"
         y="24"
-        fill="#38bdf8"
+        fill="hsl(var(--primary))"
         fontSize="16"
         fontFamily="monospace"
         textAnchor="middle"
@@ -38,7 +38,7 @@ export function PongScoreboard({
       <text
         x="120"
         y="38"
-        fill="#64748b"
+        fill="hsl(var(--muted-foreground))"
         fontSize="8"
         fontFamily="monospace"
         textAnchor="middle"

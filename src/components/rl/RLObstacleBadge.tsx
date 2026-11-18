@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { SmartObstacle, ObstacleStrategy } from "@/lib/rl/types";
 import { STRATEGIES } from "@/lib/rl/smartObstacleBehavior";
+
+const BADGE_CLS = cn(
+  "inline-flex items-center gap-1.5 rounded-md border",
+  "border-destructive/40 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive",
+);
 
 type Props = {
   obs: SmartObstacle;
@@ -11,7 +17,7 @@ type Props = {
 
 export function RLObstacleBadge({ obs, onUpdateStrategy, onRemove }: Props) {
   return (
-    <div className="inline-flex items-center gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+    <div className={BADGE_CLS}>
       <span className="font-mono text-[11px]">
         [{obs.r},{obs.c}]
       </span>

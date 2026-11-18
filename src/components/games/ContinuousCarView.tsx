@@ -4,6 +4,7 @@ import { SearchComparisonBanner } from "./SearchComparisonBanner";
 import { ContinuousCarTrack } from "./ContinuousCarTrack";
 import { ContinuousCarTelemetry } from "./ContinuousCarTelemetry";
 import { ContinuousCarControls } from "./ContinuousCarControls";
+import { CAR_CARD_CONTAINER } from "./gameLayoutStyles";
 
 type Props = {
   state: ContinuousCarState;
@@ -25,7 +26,7 @@ export function ContinuousCarView({ state }: Props) {
         controller={state.controller}
         failureNotice={failureNotice}
       />
-      <div className="relative w-full max-w-[380px] mx-auto rounded-lg overflow-hidden border border-border bg-neutral-950 p-2 shadow-inner space-y-2">
+      <div className={CAR_CARD_CONTAINER}>
         <div className="w-full aspect-[320/200]">
           <ContinuousCarTrack state={state} />
         </div>

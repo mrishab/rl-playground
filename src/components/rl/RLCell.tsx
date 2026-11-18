@@ -2,9 +2,14 @@ import { cn } from "@/lib/utils";
 import { getBgStyle, type RLCellProps } from "./rlCellUtils";
 import { RLCellContent } from "./RLCellContent";
 
-type Props = RLCellProps & {
+const BASE_CELL_CLS = cn(
+  "relative aspect-square rounded-md border flex items-center justify-center cursor-pointer select-none",
+  "transition-[color,background-color,border-color,box-shadow] duration-150 ease-out",
+);
+
+interface Props extends RLCellProps {
   onClick: () => void;
-};
+}
 
 export function RLCell(props: Props) {
   const {
@@ -30,13 +35,13 @@ export function RLCell(props: Props) {
       data-testid={`grid-cell-${r}-${c}`}
       onClick={onClick}
       className={cn(
-        "relative aspect-square rounded-md border flex items-center justify-center transition-all cursor-pointer select-none",
+        BASE_CELL_CLS,
         isObstacle &&
           "bg-muted text-muted-foreground border-border cursor-not-allowed",
         isHazard && "bg-destructive/20 border-destructive/50 text-destructive",
         isGoal && "bg-primary/20 border-primary/50 text-primary",
-        isMud && "bg-amber-500/15 border-amber-500/30 text-amber-600",
-        isIce && "bg-cyan-500/15 border-cyan-500/30 text-cyan-600",
+        isMud && "bg-warning/15 border-warning/30 text-warning",
+        isIce && "bg-info/15 border-info/30 text-info",
         smartObstacle &&
           "bg-destructive/15 border-destructive/40 text-destructive",
         isBFSPath && "ring-1 ring-ring",

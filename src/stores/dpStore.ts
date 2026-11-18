@@ -1,13 +1,17 @@
 import { create } from "zustand";
 import { DPEngine, type DPStateInspection } from "../lib/rl/dpEngine";
-import type { Action, RLEnvironmentRules } from "../lib/rl/types";
+import type {
+  RLEnvironmentRules,
+  StateValueTable,
+  StatePolicyTable,
+} from "../lib/rl/types";
 
 export type DPStoreState = {
   rules: RLEnvironmentRules;
   gamma: number;
   theta: number;
-  values: Record<string, number>;
-  policy: Record<string, Action>;
+  values: StateValueTable;
+  policy: StatePolicyTable;
   sweepCount: number;
   maxDelta: number;
   isConverged: boolean;

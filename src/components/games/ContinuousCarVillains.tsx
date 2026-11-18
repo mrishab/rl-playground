@@ -1,8 +1,8 @@
 import type { VillainCar } from "@/lib/games/types";
 
-type Props = {
+interface Props {
   villains: VillainCar[];
-};
+}
 
 export function ContinuousCarVillains({ villains }: Props) {
   return (
@@ -18,7 +18,7 @@ export function ContinuousCarVillains({ villains }: Props) {
               height="7"
               rx="1.5"
               fill={v.color}
-              stroke="#ffffff"
+              stroke="hsl(var(--primary-foreground))"
               strokeWidth="0.8"
             />
             <line
@@ -26,13 +26,13 @@ export function ContinuousCarVillains({ villains }: Props) {
               y1="0"
               x2="6"
               y2="0"
-              stroke="#fef08a"
+              stroke="hsl(var(--warning))"
               strokeWidth="1.2"
             />
             <text
               x="-1"
               y="2"
-              fill="#ffffff"
+              fill="hsl(var(--primary-foreground))"
               fontSize="4.5"
               fontWeight="bold"
               textAnchor="middle"
@@ -44,8 +44,8 @@ export function ContinuousCarVillains({ villains }: Props) {
                 cx="0"
                 cy="-6"
                 r="2.5"
-                fill="#eab308"
-                stroke="#000"
+                fill="hsl(var(--warning))"
+                stroke="hsl(var(--background))"
                 strokeWidth="0.5"
               />
             )}

@@ -1,9 +1,9 @@
-type Props = {
+interface Props {
   cx: number;
   cy: number;
   rIn: number;
   rOut: number;
-};
+}
 
 export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
   const midR = (rOut + rIn) / 2;
@@ -15,8 +15,8 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
         cx={cx}
         cy={cy}
         r={rOut}
-        fill="#1e293b"
-        stroke="#475569"
+        fill="hsl(var(--muted))"
+        stroke="hsl(var(--border))"
         strokeWidth="2"
       />
       <circle
@@ -24,7 +24,7 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
         cy={cy}
         r={midR}
         fill="none"
-        stroke="#0f172a"
+        stroke="hsl(var(--card))"
         strokeWidth={trackWidth}
       />
       <circle
@@ -32,7 +32,7 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
         cy={cy}
         r={midR}
         fill="none"
-        stroke="#64748b"
+        stroke="hsl(var(--border))"
         strokeWidth="1"
         strokeDasharray="4 4"
       />
@@ -40,8 +40,8 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
         cx={cx}
         cy={cy}
         r={rIn}
-        fill="#090d16"
-        stroke="#475569"
+        fill="hsl(var(--background))"
+        stroke="hsl(var(--border))"
         strokeWidth="2"
       />
       <line
@@ -49,7 +49,7 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
         y1={cy - rOut}
         x2={cx}
         y2={cy - rIn}
-        stroke="#e2e8f0"
+        stroke="hsl(var(--primary-foreground))"
         strokeWidth="2"
         strokeDasharray="2 2"
       />

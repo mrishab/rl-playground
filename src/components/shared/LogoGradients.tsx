@@ -9,9 +9,9 @@ export function LogoGradients() {
         y2="30"
         gradientUnits="userSpaceOnUse"
       >
-        <stop stopColor="#4F46E5" />
-        <stop offset="0.5" stopColor="#0284C7" />
-        <stop offset="1" stopColor="#10B981" />
+        <stop stopColor="hsl(var(--primary))" />
+        <stop offset="0.5" stopColor="hsl(var(--info))" />
+        <stop offset="1" stopColor="hsl(var(--success))" />
       </linearGradient>
       <linearGradient
         id="mlp-play-grad"
@@ -21,8 +21,8 @@ export function LogoGradients() {
         y2="21"
         gradientUnits="userSpaceOnUse"
       >
-        <stop stopColor="#FFFFFF" />
-        <stop offset="1" stopColor="#E0F2FE" />
+        <stop stopColor="hsl(var(--primary-foreground))" />
+        <stop offset="1" stopColor="hsl(var(--primary) / 0.8)" />
       </linearGradient>
     </defs>
   );

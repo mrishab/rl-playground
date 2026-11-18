@@ -2,9 +2,9 @@ import type { ContinuousCarState } from "@/lib/games/types";
 import { ContinuousCarSensorReadouts } from "./ContinuousCarSensorReadouts";
 import { ContinuousCarGripBoostBar } from "./ContinuousCarGripBoostBar";
 
-type Props = {
+interface Props {
   state: ContinuousCarState;
-};
+}
 
 export function ContinuousCarTelemetry({ state }: Props) {
   const steerDeg = Math.round((state.steering * 180) / Math.PI);
@@ -26,10 +26,10 @@ export function ContinuousCarTelemetry({ state }: Props) {
       ? "SKIDDING!"
       : steerText;
   const statusClass = state.isCollided
-    ? "text-red-400 font-bold"
+    ? "text-destructive font-bold"
     : state.isSkidding
-      ? "text-amber-400 font-bold animate-pulse"
-      : "text-amber-300";
+      ? "text-warning font-bold animate-pulse"
+      : "text-warning";
 
   return (
     <div className="space-y-1.5 pt-1 border-t border-border/40 text-xs font-mono">
@@ -39,10 +39,10 @@ export function ContinuousCarTelemetry({ state }: Props) {
         right={state.sensorRight}
       />
       <div className="flex justify-between items-center text-[10px]">
-        <span className="text-emerald-400 font-semibold">
+        <span className="text-success font-semibold">
           Laps: {state.lapCount}
         </span>
-        <span className="text-sky-300 font-bold">{posBadge}</span>
+        <span className="text-primary font-bold">{posBadge}</span>
         <span className="text-muted-foreground">
           {state.speed.toFixed(1)} px/s
         </span>

@@ -1,11 +1,11 @@
-type Props = {
+interface Props {
   x: number;
   y: number;
   angle: number;
   sensorLeft: number;
   sensorRight: number;
   sensorForward: number;
-};
+}
 
 export function ContinuousCarSensorRays({
   x,
@@ -31,7 +31,7 @@ export function ContinuousCarSensorRays({
         y1={y}
         x2={lx}
         y2={ly}
-        stroke="#38bdf8"
+        stroke="hsl(var(--primary))"
         strokeWidth="1"
         strokeOpacity="0.75"
       />
@@ -40,7 +40,7 @@ export function ContinuousCarSensorRays({
         y1={y}
         x2={rx}
         y2={ry}
-        stroke="#38bdf8"
+        stroke="hsl(var(--primary))"
         strokeWidth="1"
         strokeOpacity="0.75"
       />
@@ -49,7 +49,7 @@ export function ContinuousCarSensorRays({
         y1={y}
         x2={fx}
         y2={fy}
-        stroke="#eab308"
+        stroke="hsl(var(--warning))"
         strokeWidth="1"
         strokeOpacity="0.75"
       />

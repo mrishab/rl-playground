@@ -65,8 +65,20 @@ export class PacmanEngine {
     }
 
     const ghosts: Ghost[] = [
-      { id: "blinky", row: 2, col: 4, color: "#ef4444", isFrightened: false },
-      { id: "pinky", row: 2, col: 5, color: "#06b6d4", isFrightened: false },
+      {
+        id: "blinky",
+        row: 2,
+        col: 4,
+        color: "hsl(var(--destructive))",
+        isFrightened: false,
+      },
+      {
+        id: "pinky",
+        row: 2,
+        col: 5,
+        color: "hsl(var(--info))",
+        isFrightened: false,
+      },
     ];
 
     return {

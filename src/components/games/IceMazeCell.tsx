@@ -1,20 +1,20 @@
-type Props = {
+interface Props {
   r: number;
   c: number;
   cellSize: number;
   wall: boolean;
   hazard: boolean;
   isGoal: boolean;
-};
+}
 
 export function IceMazeCell({ r, c, cellSize, wall, hazard, isGoal }: Props) {
   const fill = wall
-    ? "#1e293b"
+    ? "hsl(var(--muted))"
     : hazard
-      ? "#7f1d1d"
+      ? "hsl(var(--destructive) / 0.3)"
       : isGoal
-        ? "#065f46"
-        : "#0f172a";
+        ? "hsl(var(--success) / 0.3)"
+        : "hsl(var(--background))";
 
   return (
     <g>
@@ -25,7 +25,7 @@ export function IceMazeCell({ r, c, cellSize, wall, hazard, isGoal }: Props) {
         height={cellSize - 0.8}
         fill={fill}
         rx={1.5}
-        stroke="#38bdf8"
+        stroke="hsl(var(--primary))"
         strokeWidth={wall ? "0" : "0.2"}
         strokeOpacity="0.25"
       />
@@ -35,7 +35,7 @@ export function IceMazeCell({ r, c, cellSize, wall, hazard, isGoal }: Props) {
           y={(r + 0.65) * cellSize}
           textAnchor="middle"
           fontSize="4.5"
-          fill="#fca5a5"
+          fill="hsl(var(--destructive))"
         >
           ☠
         </text>
@@ -46,7 +46,7 @@ export function IceMazeCell({ r, c, cellSize, wall, hazard, isGoal }: Props) {
           y={(r + 0.65) * cellSize}
           textAnchor="middle"
           fontSize="4.5"
-          fill="#34d399"
+          fill="hsl(var(--success))"
         >
           ★
         </text>

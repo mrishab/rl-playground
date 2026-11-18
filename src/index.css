@@ -25,6 +25,12 @@
   --color-success: hsl(var(--success));
   --color-warning: hsl(var(--warning));
   --color-danger: hsl(var(--danger));
+  --color-info: hsl(var(--info));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
   --radius: 0.75rem;
 }
 
@@ -64,6 +70,7 @@
     --success: 142 76% 36%;
     --warning: 45 93% 47%;
     --danger: 0 84% 60%;
+    --info: 199 89% 48%;
   }
 
   .dark {
@@ -96,6 +103,7 @@
     --success: 117 48% 68%;
     --warning: 49 100% 40%;
     --danger: 0 85% 62%;
+    --info: 201 100% 65%;
   }
 }
 

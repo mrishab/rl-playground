@@ -6,6 +6,7 @@ import type {
   SmartObstacle,
   ObstacleStrategy,
   TransitionLog,
+  StateVisitTable,
 } from "../lib/rl/types";
 import {
   simulateBFSAgainstObstacles,
@@ -36,7 +37,7 @@ export type RLStoreState = {
   rules: RLEnvironmentRules;
   params: RLHyperparameters;
   qTable: QTable;
-  stateVisits: Record<string, number>;
+  stateVisits: StateVisitTable;
   totalEpisodes: number;
   rewardHistory: number[];
   stepsHistory: number[];
@@ -141,7 +142,7 @@ function buildEngine(state: {
   muds?: [number, number][];
   ices?: [number, number][];
   qTable: QTable;
-  stateVisits?: Record<string, number>;
+  stateVisits?: StateVisitTable;
 }): RLEngine {
   const engine = new RLEngine(
     state.rules,

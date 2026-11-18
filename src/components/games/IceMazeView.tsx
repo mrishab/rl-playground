@@ -3,6 +3,7 @@ import { useGamesStore } from "@/stores/gamesStore";
 import { SearchComparisonBanner } from "./SearchComparisonBanner";
 import { IceMazeGrid } from "./IceMazeGrid";
 import { IceMazeControls } from "./IceMazeControls";
+import { GAME_CARD_FLEX_COL } from "./gameLayoutStyles";
 
 type Props = {
   state: IceMazeState;
@@ -24,7 +25,7 @@ export function IceMazeView({ state }: Props) {
         controller={state.controller}
         failureNotice={failureNotice}
       />
-      <div className="relative w-full aspect-square max-w-[340px] mx-auto rounded-lg overflow-hidden border border-border bg-neutral-950 p-2.5 shadow-inner flex flex-col justify-between">
+      <div className={GAME_CARD_FLEX_COL}>
         <div className="w-full h-[76%]">
           <IceMazeGrid state={state} />
         </div>

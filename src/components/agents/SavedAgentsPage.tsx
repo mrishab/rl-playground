@@ -1,65 +1,29 @@
-import { useNavigate } from "react-router-dom";
 import { Cpu } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
-import { useSavedAgentsStore } from "@/stores/savedAgentsStore";
-import { useRLStore } from "@/stores/rlStore";
-import type { SavedRLAgent } from "@/types/savedAgent";
 import { AgentsToolbar } from "./AgentsToolbar";
 import { AgentsEmptyState } from "./AgentsEmptyState";
 import { AgentCard } from "./AgentCard";
+import { useSavedAgentsPage } from "./useSavedAgentsPage";
 
 export function SavedAgentsPage() {
-  const navigate = useNavigate();
   const {
     agents,
+    filteredAgents,
     searchQuery,
+    setSearchQuery,
     deleteAgent,
     renameAgent,
     clearAll,
-    importAgents,
-    exportAgents,
-    setSearchQuery,
-  } = useSavedAgentsStore();
-
-  const filteredAgents = agents.filter(
-    (a) =>
-      a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.algorithm.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  const handleExport = () => {
-    const json = exportAgents();
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `rl-agents-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = (text: string) => {
-    const count = importAgents(text);
-    alert(`Successfully imported ${count} RL agent(s)!`);
-  };
-
-  const handleLoad = (agent: SavedRLAgent) => {
-    const rlState = useRLStore.getState();
-    rlState.setGridSize(agent.gridConfig.gridSize);
-    useRLStore.setState({
-      qTable: agent.qTable,
-      totalEpisodes: agent.metrics.totalEpisodes,
-      params: {
-        ...rlState.params,
-        ...agent.hyperparameters,
-        algorithm: agent.algorithm,
-      },
-    });
-    navigate("/gridworld");
-  };
+    handleImport,
+    handleExport,
+    handleLoad,
+    downloadRef,
+    navigate,
+  } = useSavedAgentsPage();
 
   return (
     <PageLayout icon={Cpu} title="Saved Policies & Agents" hideActionGate>
+      <a ref={downloadRef} className="hidden" aria-hidden="true" />
       <div className="space-y-3 max-w-6xl mx-auto w-full">
         <AgentsToolbar
           searchQuery={searchQuery}

@@ -1,7 +1,7 @@
 export function LogoNeuralNet() {
   return (
     <g
-      stroke="white"
+      stroke="hsl(var(--primary-foreground))"
       strokeOpacity="0.5"
       strokeWidth="1.2"
       strokeLinecap="round"

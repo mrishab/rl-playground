@@ -5,15 +5,18 @@ import {
   type EpisodeResult,
   type SmartObstacle,
   type TransitionLog,
+  type QTable,
+  type StateVisitTable,
+  type GridCoordKey,
   ACTION_DELTAS,
   ACTION_NAMES,
 } from "./types";
 import { stepSmartObstacle } from "./smartObstacleBehavior";
 
-export type QTable = Record<string, [number, number, number, number]>;
+export type { QTable } from "./types";
 
-export function stateKey(r: number, c: number): string {
-  return `${r},${c}`;
+export function stateKey(r: number, c: number): GridCoordKey {
+  return `${r},${c}` as GridCoordKey;
 }
 
 export function parseStateKey(key: string): [number, number] {
@@ -34,7 +37,7 @@ export class RLEngine {
   smartObstacles: SmartObstacle[];
   qTable: QTable = {};
   qTable2: QTable = {}; // For Double Q-Learning (QB)
-  stateVisits: Record<string, number> = {};
+  stateVisits: StateVisitTable = {};
   lastTransition: TransitionLog | null = null;
 
   get numRows(): number {

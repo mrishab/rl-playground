@@ -1,4 +1,4 @@
-import type { RLAlgorithm } from "@/lib/rl/types";
+import type { RLAlgorithm, QTable } from "@/lib/rl/types";
 
 export type SavedRLAgent = {
   id: string;
@@ -25,7 +25,7 @@ export type SavedRLAgent = {
     hazards: [number, number][];
     obstacles: [number, number][];
   };
-  qTable: Record<string, [number, number, number, number]>;
+  qTable: QTable;
 };
 
 export type SavedAgentsState = {

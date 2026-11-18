@@ -1,9 +1,9 @@
 import { Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type Props = {
+interface Props {
   onTrain: (count: number) => void;
-};
+}
 
 export function GameTrainButtons({ onTrain }: Props) {
   return (
@@ -14,7 +14,7 @@ export function GameTrainButtons({ onTrain }: Props) {
         className="h-8 text-xs font-mono gap-1"
         onClick={() => onTrain(50)}
       >
-        <Zap className="h-3.5 w-3.5 text-amber-500" /> +50
+        <Zap className="h-3.5 w-3.5 text-warning" /> Train 50
       </Button>
       <Button
         size="sm"
@@ -22,7 +22,7 @@ export function GameTrainButtons({ onTrain }: Props) {
         className="h-8 text-xs font-mono gap-1"
         onClick={() => onTrain(200)}
       >
-        <Zap className="h-3.5 w-3.5 text-amber-500" /> +200
+        <Zap className="h-3.5 w-3.5 text-warning" /> Train 200
       </Button>
     </div>
   );

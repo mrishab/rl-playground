@@ -1,9 +1,9 @@
 import type { SlotMachineArm } from "@/lib/games/types";
 
-type Props = {
+interface Props {
   machines: SlotMachineArm[];
   lastArm: number;
-};
+}
 
 export function SlotMachineArmCard({ machines, lastArm }: Props) {
   return (
@@ -14,7 +14,7 @@ export function SlotMachineArmCard({ machines, lastArm }: Props) {
         return (
           <div
             key={m.id}
-            className={`p-2 rounded-lg border text-xs space-y-1 transition-all ${
+            className={`p-2 rounded-lg border text-xs space-y-1 transition-[color,background-color,border-color,box-shadow] duration-150 ease-out ${
               isSelected
                 ? "border-primary bg-primary/10 shadow-sm"
                 : "border-border/50 bg-card/40"
@@ -25,7 +25,7 @@ export function SlotMachineArmCard({ machines, lastArm }: Props) {
                 <span>{m.symbol}</span>
                 <span className="truncate max-w-[65px]">{m.name}</span>
               </span>
-              <span className="text-[10px] text-amber-500 font-mono">
+              <span className="text-[10px] text-warning font-mono">
                 ${m.payout}
               </span>
             </div>
@@ -34,8 +34,8 @@ export function SlotMachineArmCard({ machines, lastArm }: Props) {
               <span>Win: {winPct}%</span>
             </div>
             <div className="text-[10px] flex justify-between font-mono pt-0.5 border-t border-border/30">
-              <span className="text-sky-400">Q̂: ${m.estimatedQ}</span>
-              <span className="text-emerald-400">EV: ${m.trueEV}</span>
+              <span className="text-primary">Q̂: ${m.estimatedQ}</span>
+              <span className="text-success">EV: ${m.trueEV}</span>
             </div>
           </div>
         );

@@ -2,9 +2,9 @@ import type { IceMazeState } from "@/lib/games/types";
 import { ICE_MAZE_SIZE } from "@/lib/games/iceMazeEngine";
 import { IceMazeCell } from "./IceMazeCell";
 
-type Props = {
+interface Props {
   state: IceMazeState;
-};
+}
 
 export function IceMazeGrid({ state }: Props) {
   const cellSize = 100 / ICE_MAZE_SIZE;
@@ -35,7 +35,7 @@ export function IceMazeGrid({ state }: Props) {
             cx={(pc + 0.5) * cellSize}
             cy={(pr + 0.5) * cellSize}
             r="1.2"
-            fill="#f59e0b"
+            fill="hsl(var(--warning))"
             opacity="0.65"
           />
         ))}
@@ -43,8 +43,8 @@ export function IceMazeGrid({ state }: Props) {
         cx={(state.agentCol + 0.5) * cellSize}
         cy={(state.agentRow + 0.5) * cellSize}
         r="4.2"
-        fill="#38bdf8"
-        stroke="#ffffff"
+        fill="hsl(var(--primary))"
+        stroke="hsl(var(--primary-foreground))"
         strokeWidth="0.8"
       />
     </svg>

@@ -1,8 +1,8 @@
-type Props = {
+interface Props {
   pellets: Set<string>;
   powerPellets: Set<string>;
   cellSize: number;
-};
+}
 
 export function PacmanPellets({ pellets, powerPellets, cellSize }: Props) {
   return (
@@ -12,10 +12,10 @@ export function PacmanPellets({ pellets, powerPellets, cellSize }: Props) {
         return (
           <circle
             key={pos}
-            cx={(c + 0.5) * cellSize}
-            cy={(r + 0.5) * cellSize}
+            cx={((c ?? 0) + 0.5) * cellSize}
+            cy={((r ?? 0) + 0.5) * cellSize}
             r="1"
-            fill="#facc15"
+            fill="hsl(var(--warning))"
           />
         );
       })}
@@ -24,10 +24,10 @@ export function PacmanPellets({ pellets, powerPellets, cellSize }: Props) {
         return (
           <circle
             key={pos}
-            cx={(c + 0.5) * cellSize}
-            cy={(r + 0.5) * cellSize}
+            cx={((c ?? 0) + 0.5) * cellSize}
+            cy={((r ?? 0) + 0.5) * cellSize}
             r="2.5"
-            fill="#34d399"
+            fill="hsl(var(--success))"
             className="animate-pulse"
           />
         );

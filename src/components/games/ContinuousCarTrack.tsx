@@ -3,19 +3,26 @@ import { ContinuousCarTrackGeometry } from "./ContinuousCarTrackGeometry";
 import { ContinuousCarSensorRays } from "./ContinuousCarSensorRays";
 import { ContinuousCarVehicles } from "./ContinuousCarVehicles";
 
-type Props = {
+interface Props {
   state: ContinuousCarState;
-};
+}
 
 export function ContinuousCarTrack({ state }: Props) {
   return (
     <svg
       viewBox="0 0 320 200"
-      className="w-full h-full select-none rounded bg-neutral-950"
+      className="w-full h-full select-none rounded bg-card"
     >
       <ContinuousCarTrackGeometry cx={160} cy={100} rIn={45} rOut={90} />
       {state.skidMarks.map(([sx, sy], i) => (
-        <circle key={i} cx={sx} cy={sy} r="1.5" fill="#f59e0b" opacity="0.45" />
+        <circle
+          key={i}
+          cx={sx}
+          cy={sy}
+          r="1.5"
+          fill="hsl(var(--warning))"
+          opacity="0.45"
+        />
       ))}
       <ContinuousCarSensorRays
         x={state.x}

@@ -1,6 +1,8 @@
 import {
   type Action,
   type RLEnvironmentRules,
+  type StateValueTable,
+  type StatePolicyTable,
   ACTION_DELTAS,
   ACTION_NAMES,
 } from "./types";
@@ -35,8 +37,8 @@ export class DPEngine {
   obstacles: Set<string>;
   muds: Set<string>;
 
-  values: Record<string, number> = {};
-  policy: Record<string, Action> = {};
+  values: StateValueTable = {};
+  policy: StatePolicyTable = {};
   sweepCount: number = 0;
   maxDelta: number = 0;
   isConverged: boolean = false;
@@ -152,8 +154,8 @@ export class DPEngine {
 
   stepValueIteration(): { delta: number; converged: boolean } {
     let delta = 0;
-    const newValues: Record<string, number> = { ...this.values };
-    const newPolicy: Record<string, Action> = { ...this.policy };
+    const newValues: StateValueTable = { ...this.values };
+    const newPolicy: StatePolicyTable = { ...this.policy };
 
     for (let r = 0; r < this.numRows; r++) {
       for (let c = 0; c < this.numCols; c++) {
