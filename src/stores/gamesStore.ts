@@ -70,6 +70,8 @@ export type GamesStoreState = {
   setActiveGame: (game: GameId) => void;
   setControllerMode: (mode: ControllerMode) => void;
   setIceMazeSlipRate: (rate: number) => void;
+  setContinuousCarVillainErrorRate: (rate: number) => void;
+  triggerContinuousCarBoost: () => void;
   setHyperparams: (patch: Partial<GameHyperparameters>) => void;
   togglePlay: () => void;
   setPlaying: (playing: boolean) => void;
@@ -126,6 +128,16 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
   setIceMazeSlipRate: (rate) => {
     iceMaze.setSlipRate(rate);
     set({ iceMazeState: { ...iceMaze.state } });
+  },
+
+  setContinuousCarVillainErrorRate: (rate) => {
+    continuousCar.setVillainErrorRate(rate);
+    set({ continuousCarState: { ...continuousCar.state } });
+  },
+
+  triggerContinuousCarBoost: () => {
+    continuousCar.triggerBoost();
+    set({ continuousCarState: { ...continuousCar.state } });
   },
 
   setHyperparams: (patch) => {

@@ -3,6 +3,7 @@ import type {
   ControllerMode,
   GameHyperparameters,
   NeuralNetworkApproximator,
+  VillainCar,
 } from "./types";
 
 export class ContinuousCarEngine {
@@ -17,6 +18,7 @@ export class ContinuousCarEngine {
   hyperparams: GameHyperparameters;
   searchStepCounter = 0;
   searchDiscreteSteer = 0;
+  villainErrorRate = 0.1; // Default 10% configurable
 
   constructor(hyperparams?: Partial<GameHyperparameters>) {
     this.hyperparams = {
@@ -30,17 +32,27 @@ export class ContinuousCarEngine {
     this.state = this.createInitialState();
   }
 
+  setVillainErrorRate(rate: number): void {
+    this.villainErrorRate = Math.max(0, Math.min(1, rate));
+    this.state.villainErrorRate = this.villainErrorRate;
+  }
+
+  triggerBoost(): void {
+    if (this.state.boostMeter >= 12 && !this.state.isCollided) {
+      this.state.isBoosting = true;
+      this.state.speed = Math.min(5.4, this.state.speed + 1.2);
+    }
+  }
+
   createInitialNeuralNetwork(): NeuralNetworkApproximator {
     // 4 inputs: [normLeft, normRight, normForward, balanceDiff]
     // 8 hidden neurons
-    // Heuristic/learned initialization that biases car away from nearby walls
     const weightsIn: number[][] = [];
     const biasHidden: number[] = [];
     for (let h = 0; h < 8; h++) {
       biasHidden.push(0.0);
       const row: number[] = [];
       for (let i = 0; i < 4; i++) {
-        // Small random initial weights
         row.push((Math.random() * 2 - 1) * 0.4);
       }
       weightsIn.push(row);
@@ -48,11 +60,14 @@ export class ContinuousCarEngine {
 
     // Output steering weights
     const weightsOut: number[] = [];
+    // Output throttle weights
+    const weightsThrottle: number[] = [];
     for (let h = 0; h < 8; h++) {
       weightsOut.push((Math.random() * 2 - 1) * 0.5);
+      weightsThrottle.push((Math.random() * 2 - 1) * 0.3);
     }
 
-    // Helpful sensory bias: if left wall is close, steer right (+); if right wall is close, steer left (-)
+    // Sensory bias: keep car centered away from barriers
     weightsIn[0][0] = -1.2; // close left -> negative
     weightsIn[0][1] = 1.2; // close right -> positive
     weightsIn[0][3] = -1.5; // balance diff
@@ -63,8 +78,56 @@ export class ContinuousCarEngine {
       biasHidden,
       weightsOut,
       biasOut: 0.0,
+      weightsThrottle,
+      biasThrottle: 0.3,
       hiddenActivations: new Array(8).fill(0),
     };
+  }
+
+  createInitialVillains(): VillainCar[] {
+    const vConfigs = [
+      {
+        id: "villain-1",
+        name: "Red Phantom",
+        color: "#ef4444",
+        targetRadius: 71,
+        baseSpeed: 3.3,
+        startProgress: 0.08,
+      },
+      {
+        id: "villain-2",
+        name: "Purple Viper",
+        color: "#a855f7",
+        targetRadius: 64,
+        baseSpeed: 3.5,
+        startProgress: 0.16,
+      },
+    ];
+
+    return vConfigs.map((cfg) => {
+      const theta = -Math.PI / 2 + cfg.startProgress * 2 * Math.PI;
+      const x = this.centerX + Math.cos(theta) * cfg.targetRadius;
+      const y = this.centerY + Math.sin(theta) * cfg.targetRadius;
+      const angle = theta + Math.PI / 2;
+
+      return {
+        id: cfg.id,
+        name: cfg.name,
+        x: Number(x.toFixed(1)),
+        y: Number(y.toFixed(1)),
+        angle: Number(angle.toFixed(2)),
+        speed: cfg.baseSpeed,
+        baseSpeed: cfg.baseSpeed,
+        color: cfg.color,
+        targetRadius: cfg.targetRadius,
+        lapProgress: cfg.startProgress,
+        lapCount: 0,
+        totalProgress: cfg.startProgress,
+        isSkidding: false,
+        isError: false,
+        errorTimer: 0,
+      };
+    });
   }
 
   createInitialState(): ContinuousCarState {
@@ -82,6 +145,16 @@ export class ContinuousCarEngine {
       sensorRight: 22.5,
       sensorForward: 60,
       steering: 0,
+      throttle: 0.2,
+      isBoosting: false,
+      boostMeter: 100,
+      isSkidding: false,
+      lossOfControl: 0,
+      racePosition: 3,
+      villains: this.createInitialVillains(),
+      villainErrorRate: this.villainErrorRate,
+      lastBump: null,
+      skidMarks: [],
       lapCount: 0,
       lapProgress: 0,
       isCollided: false,
@@ -113,6 +186,7 @@ export class ContinuousCarEngine {
 
     const controller = this.state.controller;
     const nn = this.state.neuralNetwork;
+    const errRate = this.villainErrorRate;
 
     this.state = {
       ...this.createInitialState(),
@@ -121,6 +195,7 @@ export class ContinuousCarEngine {
       angle: startAngle,
       controller,
       neuralNetwork: nn,
+      villainErrorRate: errRate,
       lapCount: 0,
       trackPath: [[startX, startY]],
     };
@@ -138,7 +213,6 @@ export class ContinuousCarEngine {
     this.state.controller = controller;
   }
 
-  // Raycast distance from (x, y) along angle until hitting inner or outer track circle
   raycastToWalls(x: number, y: number, rayAngle: number, maxDist = 80): number {
     const dx = Math.cos(rayAngle);
     const dy = Math.sin(rayAngle);
@@ -149,7 +223,6 @@ export class ContinuousCarEngine {
       const py = y + dy * dist;
       const dCenter = Math.hypot(px - this.centerX, py - this.centerY);
 
-      // Hit inner track barrier or outer track barrier
       if (dCenter <= this.innerRadius || dCenter >= this.outerRadius) {
         return dist;
       }
@@ -162,8 +235,8 @@ export class ContinuousCarEngine {
     y: number,
     heading: number,
   ): { left: number; right: number; forward: number } {
-    const leftAngle = heading - Math.PI / 4; // -45 deg
-    const rightAngle = heading + Math.PI / 4; // +45 deg
+    const leftAngle = heading - Math.PI / 4;
+    const rightAngle = heading + Math.PI / 4;
     const forwardAngle = heading;
 
     const left = this.raycastToWalls(x, y, leftAngle);
@@ -179,31 +252,46 @@ export class ContinuousCarEngine {
 
   forwardNeuralNetwork(inputs: number[]): {
     steering: number;
+    throttle: number;
     activations: number[];
   } {
     const nn = this.state.neuralNetwork;
     const activations: number[] = [];
 
-    // Hidden layer with tanh activation
+    // Hidden layer
     for (let h = 0; h < 8; h++) {
       let sum = nn.biasHidden[h];
       for (let i = 0; i < 4; i++) {
-        sum += inputs[i] * nn.weightsIn[h][i];
+        sum += (inputs[i] ?? 0) * nn.weightsIn[h][i];
       }
       activations.push(Math.tanh(sum));
     }
     nn.hiddenActivations = activations;
 
-    // Output layer with tanh scaled to max steering angle [-0.25, +0.25] radians (~14.3 deg)
-    let outSum = nn.biasOut;
+    // Steering output [-0.25, 0.25]
+    let steerSum = nn.biasOut;
     for (let h = 0; h < 8; h++) {
-      outSum += activations[h] * nn.weightsOut[h];
+      steerSum += activations[h] * nn.weightsOut[h];
     }
-    const steering = Math.tanh(outSum) * 0.25;
-    return { steering, activations };
+    const steering = Math.tanh(steerSum) * 0.25;
+
+    // Throttle output [-1.0, 1.0]
+    let throttleSum = nn.biasThrottle ?? 0.2;
+    if (nn.weightsThrottle) {
+      for (let h = 0; h < 8; h++) {
+        throttleSum += activations[h] * nn.weightsThrottle[h];
+      }
+    }
+    const throttle = Math.tanh(throttleSum);
+
+    return { steering, throttle, activations };
   }
 
-  selectSteeringRL(explore = true): number {
+  selectActionRL(explore = true): {
+    steering: number;
+    throttle: number;
+    shouldBoost: boolean;
+  } {
     const s = this.state;
     const normL = s.sensorLeft / 40.0;
     const normR = s.sensorRight / 40.0;
@@ -211,29 +299,218 @@ export class ContinuousCarEngine {
     const diff = (s.sensorLeft - s.sensorRight) / 40.0;
     const inputs = [normL, normR, normF, diff];
 
-    const { steering } = this.forwardNeuralNetwork(inputs);
+    const { steering, throttle } = this.forwardNeuralNetwork(inputs);
+
+    let finalSteer = steering;
+    let finalThrottle = throttle;
+    let shouldBoost = false;
 
     if (explore && Math.random() < this.hyperparams.explorationRate) {
-      // Gaussian steering exploration noise
-      const noise = (Math.random() * 2 - 1) * 0.12;
-      return Math.max(-0.25, Math.min(0.25, steering + noise));
+      const steerNoise = (Math.random() * 2 - 1) * 0.12;
+      finalSteer = Math.max(-0.25, Math.min(0.25, steering + steerNoise));
+      const throttleNoise = (Math.random() * 2 - 1) * 0.2;
+      finalThrottle = Math.max(-1, Math.min(1, throttle + throttleNoise));
+      if (Math.random() < 0.15 && s.boostMeter > 30) {
+        shouldBoost = true;
+      }
+    } else {
+      // Strategic boost when alignment is good and forward is clear
+      if (
+        Math.abs(steering) < 0.08 &&
+        s.sensorForward > 48 &&
+        s.speed < 4.2 &&
+        s.boostMeter > 40 &&
+        !s.isSkidding
+      ) {
+        shouldBoost = true;
+      }
     }
-    return steering;
+
+    return {
+      steering: finalSteer,
+      throttle: finalThrottle,
+      shouldBoost,
+    };
   }
 
   selectSteeringSearch(): number {
     const s = this.state;
-    // Discrete planner operates on coarse planning intervals (cannot adapt instantaneously to continuous curve)
     if (this.searchStepCounter % 6 === 0) {
-      this.searchDiscreteSteer = s.sensorLeft < s.sensorRight ? 0.28 : -0.28;
+      this.searchDiscreteSteer = s.sensorLeft < s.sensorRight ? 0.32 : -0.32;
     }
     this.searchStepCounter++;
     return this.searchDiscreteSteer;
   }
 
+  stepVillains(): void {
+    const s = this.state;
+    for (const v of s.villains) {
+      // Check for villain error (10% default configurable)
+      if (!v.isError && Math.random() < this.villainErrorRate / 4) {
+        v.isError = true;
+        v.errorTimer = 10;
+        v.isSkidding = true;
+        // Erroneous wobble or sudden braking
+        if (Math.random() < 0.5) {
+          v.angle += Math.random() > 0.5 ? 0.35 : -0.35;
+        } else {
+          v.speed = Math.max(1.8, v.speed * 0.65);
+        }
+      }
+
+      if (v.errorTimer > 0) {
+        v.errorTimer--;
+        if (v.errorTimer === 0) {
+          v.isError = false;
+          v.isSkidding = false;
+        }
+      }
+
+      // Driving line tracking around track center
+      const theta = Math.atan2(v.y - this.centerY, v.x - this.centerX);
+      const tangent = theta + Math.PI / 2;
+      let diff = tangent - v.angle;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      while (diff < -Math.PI) diff += 2 * Math.PI;
+
+      const currentR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
+      const rDiff = v.targetRadius - currentR;
+      const steer = diff * 0.4 + (rDiff / 20) * 0.2;
+
+      v.angle += Math.max(-0.2, Math.min(0.2, steer));
+      // Normalize angle
+      while (v.angle > Math.PI) v.angle -= 2 * Math.PI;
+      while (v.angle < -Math.PI) v.angle += 2 * Math.PI;
+
+      // Recover toward base speed
+      if (!v.isError) {
+        v.speed = v.speed * 0.94 + v.baseSpeed * 0.06;
+      }
+
+      v.x += Math.cos(v.angle) * v.speed;
+      v.y += Math.sin(v.angle) * v.speed;
+
+      // Keep within track limits
+      const updatedR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
+      if (updatedR < this.innerRadius + 6 || updatedR > this.outerRadius - 6) {
+        const clampedR = Math.max(
+          this.innerRadius + 8,
+          Math.min(this.outerRadius - 8, updatedR),
+        );
+        const curAngle = Math.atan2(v.y - this.centerY, v.x - this.centerX);
+        v.x = this.centerX + Math.cos(curAngle) * clampedR;
+        v.y = this.centerY + Math.sin(curAngle) * clampedR;
+      }
+
+      // Lap tracking
+      const newTheta = Math.atan2(v.y - this.centerY, v.x - this.centerX);
+      let progress = (newTheta + Math.PI / 2) / (2 * Math.PI);
+      if (progress < 0) progress += 1;
+      if (v.lapProgress > 0.85 && progress < 0.15) {
+        v.lapCount += 1;
+      }
+      v.lapProgress = progress;
+      v.totalProgress = Number((v.lapCount + v.lapProgress).toFixed(3));
+    }
+  }
+
+  handleCarBumps(): number {
+    const s = this.state;
+    let bumpReward = 0;
+
+    for (const v of s.villains) {
+      const dx = v.x - s.x;
+      const dy = v.y - s.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist < 13.0 && dist > 0.1) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+
+        const vxA = s.speed * Math.cos(s.angle);
+        const vyA = s.speed * Math.sin(s.angle);
+        const vxV = v.speed * Math.cos(v.angle);
+        const vyV = v.speed * Math.sin(v.angle);
+
+        const approach = (vxA - vxV) * nx + (vyA - vyV) * ny;
+
+        if (approach > 0.3 || s.isBoosting) {
+          // Agent bumps villain: villain takes a hit, agent loses momentum
+          v.speed = Math.max(1.4, v.speed * 0.58);
+          v.angle += Math.random() > 0.5 ? 0.45 : -0.45;
+          v.isError = true;
+          v.errorTimer = 14;
+          v.isSkidding = true;
+          v.x += nx * 4;
+          v.y += ny * 4;
+
+          // Agent cost: losing momentum
+          if (s.isBoosting) {
+            s.isBoosting = false;
+            s.speed = Math.max(2.2, s.speed * 0.65);
+          } else {
+            s.speed = Math.max(1.4, s.speed * 0.72);
+          }
+
+          if (v.isError || s.racePosition > 1) {
+            bumpReward += 4.0;
+          } else {
+            bumpReward -= 1.5;
+          }
+
+          s.lastBump = {
+            type: "bumped_villain",
+            villainId: v.id,
+            villainName: v.name,
+            description: `Bumped ${v.name}! Deflected opponent (-momentum)`,
+            timestamp: Date.now(),
+          };
+        } else {
+          // Villain bumps agent: agent takes hit in direction and speed
+          s.angle += Math.random() > 0.5 ? 0.38 : -0.38;
+          s.speed = Math.max(1.2, s.speed * 0.62);
+          s.lossOfControl = 0.5;
+          s.isSkidding = true;
+          bumpReward -= 4.0;
+
+          s.lastBump = {
+            type: "hit_by_villain",
+            villainId: v.id,
+            villainName: v.name,
+            description: `Hit by ${v.name}! Lost direction & speed (-4)`,
+            timestamp: Date.now(),
+          };
+        }
+
+        // Separate cars
+        const overlap = 13.0 - dist;
+        s.x -= nx * overlap * 0.5;
+        s.y -= ny * overlap * 0.5;
+        v.x += nx * overlap * 0.5;
+        v.y += ny * overlap * 0.5;
+      }
+    }
+
+    return bumpReward;
+  }
+
+  computeRaceStandings(): void {
+    const s = this.state;
+    const agentTotal = s.lapCount + s.lapProgress;
+    let rank = 1;
+
+    for (const v of s.villains) {
+      if (v.totalProgress > agentTotal) {
+        rank++;
+      }
+    }
+    s.racePosition = rank;
+  }
+
   step(
     steeringOverride?: number,
     explore = false,
+    throttleOverride?: number,
   ): { reward: number; done: boolean } {
     const s = this.state;
     if (s.isOver) {
@@ -242,52 +519,119 @@ export class ContinuousCarEngine {
     }
 
     let steering = 0;
-    if (steeringOverride !== undefined) {
-      steering = steeringOverride;
-    } else if (s.controller === "search") {
+    let throttle = 0.2;
+
+    if (s.controller === "search") {
       steering = this.selectSteeringSearch();
+      s.speed = 3.3; // Discrete search runs fixed speed without traction control
+      s.throttle = 1.0;
+    } else if (steeringOverride !== undefined) {
+      steering = steeringOverride;
+      throttle = throttleOverride !== undefined ? throttleOverride : 0.2;
+      if (throttle > 0) {
+        s.speed = Math.min(4.3, s.speed + throttle * 0.16);
+      } else {
+        s.speed = Math.max(1.4, s.speed + throttle * 0.28);
+      }
+      s.throttle = Number(throttle.toFixed(2));
     } else {
-      steering = this.selectSteeringRL(explore);
+      const action = this.selectActionRL(explore);
+      steering = action.steering;
+      throttle =
+        throttleOverride !== undefined ? throttleOverride : action.throttle;
+      if (action.shouldBoost) {
+        this.triggerBoost();
+      }
+
+      // Throttle & Speed update
+      if (throttle > 0) {
+        s.speed = Math.min(4.3, s.speed + throttle * 0.16);
+      } else {
+        s.speed = Math.max(1.4, s.speed + throttle * 0.28);
+      }
+
+      // Boost update
+      if (s.isBoosting) {
+        s.speed = Math.min(5.4, s.speed + 0.6);
+        s.boostMeter = Math.max(0, s.boostMeter - 2.5);
+        if (s.boostMeter <= 0) {
+          s.isBoosting = false;
+        }
+      } else {
+        s.boostMeter = Math.min(100, s.boostMeter + 0.3);
+      }
+      s.throttle = Number(throttle.toFixed(2));
     }
 
     s.steering = Number(steering.toFixed(3));
+    s.speed = Number(s.speed.toFixed(2));
 
-    // Update car heading and position
+    // Cornering Grip / Loss of Control Mechanics
+    // Lateral stress = speed * (|steering| + 0.03)
+    const lateralStress = s.speed * (Math.abs(steering) + 0.03);
+    const gripLimit = 0.54;
+
+    if (lateralStress > gripLimit) {
+      s.lossOfControl = Math.min(1.0, (lateralStress - gripLimit) / 0.4);
+      s.isSkidding = true;
+      // Oversteer fishtail under continuous RL driving
+      if (s.controller !== "search") {
+        s.angle += (Math.random() - 0.5) * 0.22 * s.lossOfControl;
+        s.speed = Math.max(1.4, s.speed - 0.16 * s.lossOfControl);
+      }
+
+      if (s.skidMarks.length > 25) s.skidMarks.shift();
+      s.skidMarks.push([s.x, s.y]);
+    } else {
+      s.lossOfControl = 0;
+      s.isSkidding = false;
+    }
+
+    // Update heading and position
     s.angle += steering;
-    // Normalize angle to [-PI, PI]
     while (s.angle > Math.PI) s.angle -= 2 * Math.PI;
     while (s.angle < -Math.PI) s.angle += 2 * Math.PI;
 
     s.x += Math.cos(s.angle) * s.speed;
     s.y += Math.sin(s.angle) * s.speed;
 
+    // Centrifugal outward slide if losing control
+    if (s.lossOfControl > 0) {
+      const theta = Math.atan2(s.y - this.centerY, s.x - this.centerX);
+      s.x += Math.cos(theta) * (s.speed * 0.35 * s.lossOfControl);
+      s.y += Math.sin(theta) * (s.speed * 0.35 * s.lossOfControl);
+    }
+
     if (s.trackPath.length > 50) s.trackPath.shift();
     s.trackPath.push([s.x, s.y]);
 
-    // Compute updated continuous distance sensors
+    // Distance sensors
     const sensors = this.computeSensors(s.x, s.y, s.angle);
     s.sensorLeft = sensors.left;
     s.sensorRight = sensors.right;
     s.sensorForward = sensors.forward;
 
-    // Check collision with track walls
+    // Advance villains and handle bumper collisions
+    this.stepVillains();
+    const bumpReward = this.handleCarBumps();
+    this.computeRaceStandings();
+
+    // Barrier collision detection
     const dCenter = Math.hypot(s.x - this.centerX, s.y - this.centerY);
     let reward = 0;
     let done = false;
 
     if (dCenter <= this.innerRadius + 4 || dCenter >= this.outerRadius - 4) {
-      // Crash into wall!
       s.isCollided = true;
       s.isOver = true;
       reward = -50.0;
       done = true;
     } else {
-      // Reward staying centered and advancing clockwise around the track
+      // Centering and tangent heading alignment rewards
       const trackMidRadius = (this.innerRadius + this.outerRadius) / 2;
       const centeringDeviation = Math.abs(dCenter - trackMidRadius) / 22.5;
       const centeringReward = Math.max(0, 1.0 - centeringDeviation);
 
-      // Tangent direction for clockwise motion around center
       const angleFromCenter = Math.atan2(
         s.y - this.centerY,
         s.x - this.centerX,
@@ -295,29 +639,38 @@ export class ContinuousCarEngine {
       const idealHeading = angleFromCenter + Math.PI / 2;
       const headingAlignment = Math.cos(s.angle - idealHeading);
 
-      reward = 0.5 + 1.5 * centeringReward + 2.0 * headingAlignment;
+      const baseReward = 0.5 + 1.5 * centeringReward + 2.0 * headingAlignment;
+      const speedReward = (s.speed / 4.0) * 1.0;
+      const gripPenalty = s.lossOfControl * 2.5;
+      const rankReward =
+        s.racePosition === 1 ? 2.0 : s.racePosition === 2 ? 0.5 : -0.5;
 
-      // Track lap progress
-      let currentProgress = (angleFromCenter + Math.PI) / (2 * Math.PI);
+      reward = baseReward + speedReward - gripPenalty + rankReward + bumpReward;
+
+      // Lap tracking
+      let currentProgress = (angleFromCenter + Math.PI / 2) / (2 * Math.PI);
       if (currentProgress < 0) currentProgress += 1;
       if (s.lapProgress > 0.85 && currentProgress < 0.15) {
-        // Completed full lap!
         s.lapCount += 1;
-        reward += 50.0;
+        reward += s.racePosition === 1 ? 50.0 : 20.0;
       }
       s.lapProgress = currentProgress;
     }
 
     s.lastReward = Number(reward.toFixed(2));
 
-    // Neural Network weight update (Policy Gradient approximation)
+    // Neural Network Policy Gradient Update
     if (s.controller === "rl" && !s.isCollided) {
       const lr = this.hyperparams.learningRate * 0.1;
       const nn = s.neuralNetwork;
       const delta = (s.sensorLeft - s.sensorRight) / 40.0;
-      // Reinforce steering that balances sensor distances
+
       for (let h = 0; h < 8; h++) {
         nn.weightsOut[h] += lr * reward * nn.hiddenActivations[h] * -delta;
+        if (nn.weightsThrottle) {
+          nn.weightsThrottle[h] +=
+            lr * reward * nn.hiddenActivations[h] * (1 - s.lossOfControl);
+        }
       }
     }
 
@@ -329,7 +682,7 @@ export class ContinuousCarEngine {
     wins: number;
     avgReward: number;
   } {
-    let lapsCompleted = 0;
+    let lapsWon = 0;
     let totalReward = 0;
     const prevController = this.state.controller;
     this.state.controller = "rl";
@@ -347,8 +700,8 @@ export class ContinuousCarEngine {
         if (done) break;
       }
 
-      if (this.state.lapCount > startLaps) {
-        lapsCompleted++;
+      if (this.state.lapCount > startLaps && this.state.racePosition === 1) {
+        lapsWon++;
       }
       totalReward += epReward;
 
@@ -361,7 +714,7 @@ export class ContinuousCarEngine {
     this.state.controller = prevController;
     return {
       episodes,
-      wins: lapsCompleted,
+      wins: lapsWon,
       avgReward: episodes > 0 ? totalReward / episodes : 0,
     };
   }

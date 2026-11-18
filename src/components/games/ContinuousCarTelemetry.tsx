@@ -1,5 +1,6 @@
 import type { ContinuousCarState } from "@/lib/games/types";
 import { ContinuousCarSensorReadouts } from "./ContinuousCarSensorReadouts";
+import { ContinuousCarGripBoostBar } from "./ContinuousCarGripBoostBar";
 
 type Props = {
   state: ContinuousCarState;
@@ -13,6 +14,22 @@ export function ContinuousCarTelemetry({ state }: Props) {
       : steerDeg < 0
         ? `${steerDeg}° L`
         : "0° Center";
+  const posBadge =
+    state.racePosition === 1
+      ? "🥇 1st"
+      : state.racePosition === 2
+        ? "🥈 2nd"
+        : "🥉 3rd";
+  const statusText = state.isCollided
+    ? "CRASH!"
+    : state.isSkidding
+      ? "SKIDDING!"
+      : steerText;
+  const statusClass = state.isCollided
+    ? "text-red-400 font-bold"
+    : state.isSkidding
+      ? "text-amber-400 font-bold animate-pulse"
+      : "text-amber-300";
 
   return (
     <div className="space-y-1.5 pt-1 border-t border-border/40 text-xs font-mono">
@@ -25,31 +42,16 @@ export function ContinuousCarTelemetry({ state }: Props) {
         <span className="text-emerald-400 font-semibold">
           Laps: {state.lapCount}
         </span>
-        <span
-          className={
-            state.isCollided ? "text-red-400 font-bold" : "text-amber-300"
-          }
-        >
-          {state.isCollided ? "CRASH! Barrier Hit" : `Steering: ${steerText}`}
+        <span className="text-sky-300 font-bold">{posBadge}</span>
+        <span className="text-muted-foreground">
+          {state.speed.toFixed(1)} px/s
         </span>
-        <div
-          className="flex items-center gap-0.5"
-          title="Neural Network Hidden Neurons"
-        >
-          {state.neuralNetwork.hiddenActivations.slice(0, 6).map((act, i) => (
-            <div
-              key={i}
-              className="w-1.5 h-3 rounded-xs"
-              style={{
-                backgroundColor:
-                  act > 0
-                    ? `rgba(56, 189, 248, ${Math.min(1, Math.abs(act))})`
-                    : `rgba(239, 68, 68, ${Math.min(1, Math.abs(act))})`,
-              }}
-            />
-          ))}
-        </div>
+        <span className={statusClass}>{statusText}</span>
       </div>
+      <ContinuousCarGripBoostBar
+        boostMeter={state.boostMeter}
+        lossOfControl={state.lossOfControl}
+      />
     </div>
   );
 }

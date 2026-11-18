@@ -507,12 +507,16 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
         cy.contains("dF:").should("be.visible");
         cy.contains("dR:").should("be.visible");
         cy.contains("Laps:").should("be.visible");
+        cy.contains("Villain Error Rate:").should("be.visible");
+        cy.contains("Boost!").should("be.visible");
+        cy.contains("Grip:").should("be.visible");
       });
 
       it("steps car kinematics and trains neural network continuous policy", () => {
         cy.contains("button", "Step").click();
         cy.contains("button", "+50").click();
         cy.contains("Episodes").should("exist");
+        cy.contains("button", "Boost!").click();
       });
     });
 

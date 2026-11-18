@@ -11,7 +11,6 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
 
   return (
     <g>
-      {/* Outer barrier */}
       <circle
         cx={cx}
         cy={cy}
@@ -20,7 +19,6 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
         stroke="#475569"
         strokeWidth="2"
       />
-      {/* Track asphalt */}
       <circle
         cx={cx}
         cy={cy}
@@ -29,7 +27,6 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
         stroke="#0f172a"
         strokeWidth={trackWidth}
       />
-      {/* Dashed centerline */}
       <circle
         cx={cx}
         cy={cy}
@@ -39,7 +36,6 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
         strokeWidth="1"
         strokeDasharray="4 4"
       />
-      {/* Inner barrier / grass */}
       <circle
         cx={cx}
         cy={cy}
@@ -48,7 +44,6 @@ export function ContinuousCarTrackGeometry({ cx, cy, rIn, rOut }: Props) {
         stroke="#475569"
         strokeWidth="2"
       />
-      {/* Start / Finish line */}
       <line
         x1={cx}
         y1={cy - rOut}

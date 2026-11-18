@@ -205,12 +205,40 @@ export type LemonadeState = {
 };
 
 // Continuous Track Autonomous Car Types
+export type VillainCar = {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  angle: number;
+  speed: number;
+  baseSpeed: number;
+  color: string;
+  targetRadius: number;
+  lapProgress: number; // 0 to 1
+  lapCount: number;
+  totalProgress: number;
+  isSkidding: boolean;
+  isError: boolean;
+  errorTimer: number;
+};
+
+export type BumpEvent = {
+  type: "hit_by_villain" | "bumped_villain";
+  villainId: string;
+  villainName: string;
+  description: string;
+  timestamp: number;
+};
+
 export type NeuralNetworkApproximator = {
   weightsIn: number[][]; // 4 inputs x 8 hidden neurons
   biasHidden: number[]; // 8
-  weightsOut: number[]; // 8 hidden x 1 output
+  weightsOut: number[]; // 8 hidden x 1 output (steering)
   biasOut: number;
   hiddenActivations: number[];
+  weightsThrottle?: number[]; // 8 hidden x 1 output (throttle)
+  biasThrottle?: number;
 };
 
 export type ContinuousCarState = {
@@ -222,6 +250,16 @@ export type ContinuousCarState = {
   sensorRight: number;
   sensorForward: number;
   steering: number;
+  throttle: number;
+  isBoosting: boolean;
+  boostMeter: number; // 0 to 100
+  isSkidding: boolean;
+  lossOfControl: number; // 0 (full grip) to 1 (full skid)
+  racePosition: number; // 1, 2, 3
+  villains: VillainCar[];
+  villainErrorRate: number; // default 0.10 (10%)
+  lastBump: BumpEvent | null;
+  skidMarks: [number, number][];
   lapCount: number;
   lapProgress: number; // 0 to 1
   isCollided: boolean;

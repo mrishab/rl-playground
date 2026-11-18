@@ -19,8 +19,8 @@ export const SEARCH_COMPARISONS: Record<
   },
   "continuous-car": {
     search:
-      "Discrete search trees cannot handle continuous floating-point state-actions, causing jerky oscillations into walls.",
-    rl: "Deep RL / Function approximation maps continuous wall-distance sensors to smooth steering angles.",
+      "Discrete search trees cannot handle continuous floating-point state-actions, causing jerky oscillations into walls and losing cornering grip.",
+    rl: "RL balances speed, throttle, and steering, managing tire grip around turns while overtaking and racing villain cars.",
   },
   pong: {
     search:
