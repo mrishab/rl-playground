@@ -426,8 +426,9 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
         .should("have.text", "0");
 
       // Hyperparameters card
-      cy.contains("Game Hyperparameters").should("be.visible");
-      cy.contains("Learning Rate (α):").should("be.visible");
+      cy.contains("Algo:").should("be.visible");
+      cy.contains("button", "sarsa").should("be.visible");
+      cy.contains("button", "q-learning").should("be.visible");
     });
 
     describe("Game 1: The Stochastic Gridworld with Slippery Tiles (The Ice Maze)", () => {
