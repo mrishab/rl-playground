@@ -41,7 +41,7 @@ export class ContinuousCarEngine {
   triggerBoost(): void {
     if (this.state.boostMeter >= 12 && !this.state.isCollided) {
       this.state.isBoosting = true;
-      this.state.speed = Math.min(5.4, this.state.speed + 1.2);
+      this.state.speed = Math.min(3.2, this.state.speed + 0.4);
     }
   }
 
@@ -86,17 +86,19 @@ export class ContinuousCarEngine {
         id: "villain-1",
         name: "Red Phantom",
         color: "#ef4444",
-        targetRadius: 71,
-        baseSpeed: 3.3,
-        startProgress: 0.08,
+        targetRadius: 74,
+        baseSpeed: 3.5,
+        startProgress: 0.97,
+        lapCount: -1,
       },
       {
         id: "villain-2",
         name: "Purple Viper",
         color: "#a855f7",
-        targetRadius: 64,
-        baseSpeed: 3.5,
-        startProgress: 0.16,
+        targetRadius: 61,
+        baseSpeed: 3.3,
+        startProgress: 0.94,
+        lapCount: -1,
       },
     ];
 
@@ -117,8 +119,8 @@ export class ContinuousCarEngine {
         color: cfg.color,
         targetRadius: cfg.targetRadius,
         lapProgress: cfg.startProgress,
-        lapCount: 0,
-        totalProgress: cfg.startProgress,
+        lapCount: cfg.lapCount,
+        totalProgress: Number((cfg.lapCount + cfg.startProgress).toFixed(3)),
         isSkidding: false,
         isError: false,
         errorTimer: 0,
@@ -136,7 +138,7 @@ export class ContinuousCarEngine {
       x: startX,
       y: startY,
       angle: startAngle,
-      speed: 3.2,
+      speed: 2.6,
       sensorLeft: 22.5,
       sensorRight: 22.5,
       sensorForward: 60,
@@ -146,7 +148,7 @@ export class ContinuousCarEngine {
       boostMeter: 100,
       isSkidding: false,
       lossOfControl: 0,
-      racePosition: 3,
+      racePosition: 1,
       villains: this.createInitialVillains(),
       villainErrorRate: this.villainErrorRate,
       lastBump: null,
@@ -161,6 +163,7 @@ export class ContinuousCarEngine {
       trackPath: [[startX, startY]],
     };
 
+    this.state = s;
     const sensors = this.computeSensors(s.x, s.y, s.angle);
     s.sensorLeft = sensors.left;
     s.sensorRight = sensors.right;
@@ -313,9 +316,9 @@ export class ContinuousCarEngine {
       // Strategic boost when alignment is good and forward is clear
       if (
         Math.abs(steering) < 0.08 &&
-        s.sensorForward > 48 &&
-        s.speed < 4.2 &&
-        s.boostMeter > 40 &&
+        s.sensorForward > 45 &&
+        s.speed < 2.85 &&
+        s.boostMeter > 35 &&
         !s.isSkidding
       ) {
         shouldBoost = true;
@@ -342,15 +345,14 @@ export class ContinuousCarEngine {
     const s = this.state;
     for (const v of s.villains) {
       // Check for villain error (10% default configurable)
-      if (!v.isError && Math.random() < this.villainErrorRate / 4) {
+      if (!v.isError && Math.random() < this.villainErrorRate * 0.04) {
         v.isError = true;
-        v.errorTimer = 10;
+        v.errorTimer = 6;
         v.isSkidding = true;
-        // Erroneous wobble or sudden braking
         if (Math.random() < 0.5) {
-          v.angle += Math.random() > 0.5 ? 0.35 : -0.35;
+          v.angle += Math.random() > 0.5 ? 0.2 : -0.2;
         } else {
-          v.speed = Math.max(1.8, v.speed * 0.65);
+          v.speed = Math.max(2.8, v.speed * 0.85);
         }
       }
 
@@ -362,7 +364,7 @@ export class ContinuousCarEngine {
         }
       }
 
-      // Driving line tracking around track center
+      // Feedforward curvature steering around track center
       const theta = Math.atan2(v.y - this.centerY, v.x - this.centerX);
       const tangent = theta + Math.PI / 2;
       let diff = tangent - v.angle;
@@ -370,17 +372,18 @@ export class ContinuousCarEngine {
       while (diff < -Math.PI) diff += 2 * Math.PI;
 
       const currentR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
-      const rDiff = v.targetRadius - currentR;
-      const steer = diff * 0.4 + (rDiff / 20) * 0.2;
+      const rDiff = currentR - v.targetRadius;
+      const curvatureFeedforward = v.speed / v.targetRadius;
+      const steer = curvatureFeedforward + diff * 0.5 + (rDiff / 8.0) * 0.15;
 
-      v.angle += Math.max(-0.2, Math.min(0.2, steer));
+      v.angle += Math.max(-0.25, Math.min(0.25, steer));
       // Normalize angle
       while (v.angle > Math.PI) v.angle -= 2 * Math.PI;
       while (v.angle < -Math.PI) v.angle += 2 * Math.PI;
 
       // Recover toward base speed
       if (!v.isError) {
-        v.speed = v.speed * 0.94 + v.baseSpeed * 0.06;
+        v.speed = v.speed * 0.95 + v.baseSpeed * 0.05;
       }
 
       v.x += Math.cos(v.angle) * v.speed;
@@ -413,80 +416,118 @@ export class ContinuousCarEngine {
   handleCarBumps(): number {
     const s = this.state;
     let bumpReward = 0;
+    const bumpRadius = 8.5;
 
     for (const v of s.villains) {
       const dx = v.x - s.x;
       const dy = v.y - s.y;
       const dist = Math.hypot(dx, dy);
 
-      if (dist < 13.0 && dist > 0.1) {
+      if (dist < bumpRadius && dist > 0.1) {
         const nx = dx / dist;
         const ny = dy / dist;
 
         const uxA = Math.cos(s.angle);
         const uyA = Math.sin(s.angle);
+        const rxA = -uyA;
+        const ryA = uxA;
+
         const uxV = Math.cos(v.angle);
         const uyV = Math.sin(v.angle);
 
         // Directed velocity towards the other vehicle
         const dotA = uxA * nx + uyA * ny;
+        const dotV = uxV * -nx + uyV * -ny;
+
         const impactA = s.isBoosting
           ? s.speed * 1.5
           : s.speed * Math.max(0, dotA);
-
-        const dotV = uxV * -nx + uyV * -ny;
         const impactV = v.speed * Math.max(0, dotV);
 
-        if (impactA > impactV || s.isBoosting) {
-          // Agent bumps villain: villain takes a hit, agent loses momentum
-          v.speed = Math.max(1.4, v.speed * 0.58);
-          v.angle += Math.random() > 0.5 ? 0.45 : -0.45;
-          v.isError = true;
-          v.errorTimer = 14;
-          v.isSkidding = true;
-          v.x += nx * 4;
-          v.y += ny * 4;
-
-          // Agent cost: losing momentum
-          if (s.isBoosting) {
-            s.isBoosting = false;
-            s.speed = Math.max(2.0, s.speed * 0.65);
-          } else {
-            s.speed = Math.max(1.4, s.speed * 0.72);
-          }
-
-          if (v.isError || s.racePosition > 1) {
-            bumpReward += 4.0;
-          } else {
-            bumpReward -= 1.5;
-          }
-
-          s.lastBump = {
-            type: "bumped_villain",
-            villainId: v.id,
-            villainName: v.name,
-            description: `Bumped ${v.name}! Deflected opponent (-momentum)`,
-            timestamp: Date.now(),
-          };
-        } else {
+        if (impactV > impactA && !s.isBoosting) {
           // Villain bumps agent: agent takes hit in direction and speed
-          s.angle += Math.random() > 0.5 ? 0.38 : -0.38;
-          s.speed = Math.max(1.2, s.speed * 0.62);
-          s.lossOfControl = 0.5;
+          s.angle += Math.random() > 0.5 ? 0.18 : -0.18;
+          s.speed = Math.max(1.2, s.speed * 0.82);
+          v.speed = Math.max(1.4, v.speed * 0.72);
+          s.lossOfControl = 0.35;
           s.isSkidding = true;
-          bumpReward -= 4.0;
+          bumpReward -= 3.5;
 
           s.lastBump = {
             type: "hit_by_villain",
             villainId: v.id,
             villainName: v.name,
-            description: `Hit by ${v.name}! Lost direction & speed (-4)`,
+            description: `Hit by ${v.name}! Lost direction & speed (-3.5)`,
             timestamp: Date.now(),
           };
+        } else {
+          // Agent bumps villain:
+          // Check if wrong bump from directly behind or tactical side bump
+          const forwardDotV = nx * uxV + ny * uyV;
+          const rxV = -uyV;
+          const ryV = uxV;
+          const sideOffsetV = Math.abs(rxV * nx + ryV * ny);
+          const headingDot = uxA * uxV + uyA * uyV;
+          const isRearBump =
+            forwardDotV > 0.7 && sideOffsetV < 0.45 && headingDot > 0.6;
+
+          if (isRearBump) {
+            // Wrong bump from directly behind: pushes villain forward and speeds them up
+            v.speed = Math.min(v.baseSpeed * 1.35, v.speed + 0.85);
+            v.x += uxV * 4;
+            v.y += uyV * 4;
+            v.isError = false;
+            v.isSkidding = false;
+
+            if (s.isBoosting) {
+              s.isBoosting = false;
+              s.speed = Math.max(1.4, s.speed * 0.7);
+            } else {
+              s.speed = Math.max(1.2, s.speed * 0.7);
+            }
+
+            bumpReward -= 3.5;
+
+            s.lastBump = {
+              type: "bumped_villain",
+              villainId: v.id,
+              villainName: v.name,
+              description: `Wrong rear bump pushed ${v.name} ahead! (+Villain speed, -momentum)`,
+              timestamp: Date.now(),
+            };
+          } else {
+            // Tactical side bump: destabilize villain or force off racing line into spin/deceleration
+            v.speed = Math.max(0.9, v.speed * 0.45);
+            const spinSign = rxA * nx + ryA * ny >= 0 ? 1 : -1;
+            v.angle += spinSign * 0.55;
+            v.isError = true;
+            v.errorTimer = 18;
+            v.isSkidding = true;
+            v.x += nx * 5;
+            v.y += ny * 5;
+
+            if (s.isBoosting) {
+              s.isBoosting = false;
+              s.speed = Math.max(1.6, s.speed * 0.75);
+            } else {
+              s.speed = Math.max(1.4, s.speed * 0.78);
+            }
+            s.lossOfControl = Math.max(s.lossOfControl, 0.2);
+
+            bumpReward += s.racePosition > 1 ? 6.0 : 3.5;
+
+            s.lastBump = {
+              type: "bumped_villain",
+              villainId: v.id,
+              villainName: v.name,
+              description: `Tactical side bump spun out ${v.name}! Destabilized opponent (-momentum)`,
+              timestamp: Date.now(),
+            };
+          }
         }
 
         // Separate cars
-        const overlap = 13.0 - dist;
+        const overlap = bumpRadius - dist;
         s.x -= nx * overlap * 0.5;
         s.y -= ny * overlap * 0.5;
         v.x += nx * overlap * 0.5;
@@ -542,22 +583,22 @@ export class ContinuousCarEngine {
     }
 
     if (s.controller !== "search") {
-      // Throttle & Speed modulation
+      // Throttle & Speed modulation: baseline max speed 2.85 (lower than villains 3.5 & 3.3)
       if (throttle > 0) {
-        s.speed = Math.min(4.3, s.speed + throttle * 0.16);
+        s.speed = Math.min(2.85, s.speed + throttle * 0.14);
       } else {
-        s.speed = Math.max(1.4, s.speed + throttle * 0.28);
+        s.speed = Math.max(1.2, s.speed + throttle * 0.25);
       }
 
-      // Boost mechanics (/boost/boost)
+      // Boost mechanics (burst boost capped at 3.2, drains boost meter)
       if (s.isBoosting) {
-        s.speed = Math.min(5.4, s.speed + 0.5);
+        s.speed = Math.min(3.2, s.speed + 0.3);
         s.boostMeter = Math.max(0, s.boostMeter - 2.5);
         if (s.boostMeter <= 0) {
           s.isBoosting = false;
         }
       } else {
-        s.boostMeter = Math.min(100, s.boostMeter + 0.3);
+        s.boostMeter = Math.min(100, s.boostMeter + 0.25);
       }
     }
 
@@ -642,7 +683,7 @@ export class ContinuousCarEngine {
       const speedReward = (s.speed / 4.0) * 1.0;
       const gripPenalty = s.lossOfControl * 2.5;
       const rankReward =
-        s.racePosition === 1 ? 2.0 : s.racePosition === 2 ? 0.5 : -0.5;
+        s.racePosition === 1 ? 2.5 : s.racePosition === 2 ? 0.2 : -1.0;
 
       reward = baseReward + speedReward - gripPenalty + rankReward + bumpReward;
 
@@ -651,9 +692,19 @@ export class ContinuousCarEngine {
       if (currentProgress < 0) currentProgress += 1;
       if (s.lapProgress > 0.85 && currentProgress < 0.15) {
         s.lapCount += 1;
-        reward += s.racePosition === 1 ? 50.0 : 20.0;
+        reward += s.racePosition === 1 ? 50.0 : 15.0;
+        if (s.racePosition === 1) {
+          s.isOver = true;
+          done = true;
+        }
       }
       s.lapProgress = currentProgress;
+
+      if (s.villains.some((v) => v.lapCount >= 1)) {
+        s.isOver = true;
+        done = true;
+        reward -= 25.0;
+      }
     }
 
     s.lastReward = Number(reward.toFixed(2));

@@ -245,26 +245,57 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     );
   });
 
-  it("handles bump when agent bumps villain (villain deflected, agent loses momentum)", () => {
+  it("handles wrong bump from behind (speeds up villain, backfires with negative reward and lost momentum)", () => {
     const engine = new ContinuousCarEngine();
     const villain = engine.state.villains[0];
 
-    // Place agent moving faster directly behind villain
+    // Place agent directly behind villain moving in same direction
     villain.x = engine.state.x + 5;
     villain.y = engine.state.y;
     villain.angle = 0;
     villain.speed = 2.0;
     engine.state.angle = 0;
-    engine.state.speed = 4.2;
+    engine.state.speed = 2.85;
 
     const reward = engine.handleCarBumps();
     assert.ok(engine.state.lastBump !== null);
     assert.equal(engine.state.lastBump?.type, "bumped_villain");
-    // Villain is knocked off and triggered into error
+    // Villain is pushed forward and sped up, NOT triggered into error
+    assert.equal(villain.isError, false);
+    assert.ok(villain.speed > 2.0, "Villain should gain speed from rear push");
+    // Agent loses momentum and incurs a negative penalty
+    assert.ok(
+      engine.state.speed < 2.85,
+      "Agent should lose speed on rear bump",
+    );
+    assert.ok(reward < 0, "Wrong rear bump should give negative reward");
+  });
+
+  it("handles tactical side bump (destabilizes villain into skid/error, costs agent momentum, positive reward)", () => {
+    const engine = new ContinuousCarEngine();
+    const villain = engine.state.villains[0];
+
+    // Position contact laterally (side impact / off-line angle)
+    villain.x = engine.state.x + 4;
+    villain.y = engine.state.y + 4;
+    villain.angle = 0;
+    villain.speed = 3.5;
+    engine.state.angle = 0;
+    engine.state.speed = 2.85;
+
+    const reward = engine.handleCarBumps();
+    assert.ok(engine.state.lastBump !== null);
+    assert.equal(engine.state.lastBump?.type, "bumped_villain");
+    // Villain is destabilized into error and skid with reduced speed
     assert.equal(villain.isError, true);
-    // Agent loses momentum (speed drops below 4.2)
-    assert.ok(engine.state.speed < 4.2, "Agent should pay a momentum cost");
-    assert.ok(typeof reward === "number");
+    assert.equal(villain.isSkidding, true);
+    assert.ok(villain.speed < 3.5, "Villain speed should drop after side bump");
+    // Agent pays momentum cost but receives tactical reward
+    assert.ok(
+      engine.state.speed < 2.85,
+      "Agent should pay momentum cost on side bump",
+    );
+    assert.ok(reward > 0, "Tactical side bump should award positive points");
   });
 
   it("triggers boost, accelerating car and consuming boost meter", () => {
@@ -286,9 +317,23 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
 
   it("calculates race standings correctly based on lap progress", () => {
     const engine = new ContinuousCarEngine();
-    // Villains start ahead, so agent starts in position 3
+    // Agent starts at pole position (racePosition 1), villains start behind start line
     engine.computeRaceStandings();
-    assert.equal(engine.state.racePosition, 3);
+    assert.equal(
+      engine.state.racePosition,
+      1,
+      "Agent starts in pole position 1",
+    );
+
+    // Villains overtake agent
+    engine.state.villains[0].totalProgress = 0.5;
+    engine.state.villains[1].totalProgress = 0.6;
+    engine.computeRaceStandings();
+    assert.equal(
+      engine.state.racePosition,
+      3,
+      "Agent should drop to 3rd when villains pass",
+    );
 
     // Advance agent ahead of both villains
     engine.state.lapCount = 1;
@@ -296,7 +341,37 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     assert.equal(
       engine.state.racePosition,
       1,
-      "Agent should lead in 1st place",
+      "Agent should lead in 1st place after completing lap",
+    );
+  });
+
+  it("ensures agent baseline max speed is lower than villains speeds so villains overtake on open track", () => {
+    const engine = new ContinuousCarEngine();
+    // Agent baseline max speed is 2.85
+    assert.ok(engine.state.speed <= 2.85);
+    // All villains have base speeds exceeding agent max baseline speed
+    for (const villain of engine.state.villains) {
+      assert.ok(
+        villain.baseSpeed > 2.85,
+        `Villain ${villain.name} base speed (${villain.baseSpeed}) must exceed agent max baseline (2.85)`,
+      );
+    }
+  });
+
+  it("demonstrates learning progression: untrained agent has 0% win rate against fast villains", () => {
+    // Untrained agent running in deterministic mode (explore=false) without RL training
+    const engine = new ContinuousCarEngine();
+    let steps = 0;
+    while (!engine.state.isOver && steps < 200) {
+      engine.step(undefined, false);
+      steps++;
+    }
+    const untrainedWon =
+      engine.state.lapCount > 0 && engine.state.racePosition === 1;
+    assert.equal(
+      untrainedWon,
+      false,
+      "Untrained agent must not win against fast villains in round 1",
     );
   });
 

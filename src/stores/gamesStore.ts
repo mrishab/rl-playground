@@ -378,10 +378,11 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         const m = s.metrics["continuous-car"];
         const newEpisodes = done ? m.episodes + 1 : m.episodes;
         const won =
-          !continuousCar.state.isCollided && continuousCar.state.lapCount > 0;
+          !continuousCar.state.isCollided &&
+          continuousCar.state.lapCount > 0 &&
+          continuousCar.state.racePosition === 1;
         const newWins = done && won ? m.wins + 1 : m.wins;
-        const newLosses =
-          done && continuousCar.state.isCollided ? m.losses + 1 : m.losses;
+        const newLosses = done && !won ? m.losses + 1 : m.losses;
         const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         const newScore = continuousCar.state.lapCount * 50;
         return {
