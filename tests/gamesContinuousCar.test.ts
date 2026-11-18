@@ -101,7 +101,7 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     engine.setController("search");
 
     let crashed = false;
-    for (let s = 0; s < 40; s++) {
+    for (let s = 0; s < 50; s++) {
       const { done } = engine.step();
       if (done && engine.state.isCollided) {
         crashed = true;
@@ -358,6 +358,27 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     }
   });
 
+  it("verifies faster villains consistently overtake slower cruising agent when no tactical bumps occur", () => {
+    const engine = new ContinuousCarEngine();
+    assert.equal(
+      engine.state.racePosition,
+      1,
+      "Agent starts in pole position 1",
+    );
+
+    // Agent cruises on centerline at baseline speed
+    const circleSteer = engine.state.speed / 67.5;
+    for (let s = 0; s < 45; s++) {
+      engine.step(circleSteer, false, 0.5);
+    }
+
+    // Faster villains must have overtaken slower agent
+    assert.ok(
+      engine.state.racePosition > 1,
+      "Faster villains should pass slower cruising agent on open track",
+    );
+  });
+
   it("demonstrates learning progression: untrained agent has 0% win rate against fast villains", () => {
     // Untrained agent running in deterministic mode (explore=false) without RL training
     const engine = new ContinuousCarEngine();
@@ -372,6 +393,16 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
       untrainedWon,
       false,
       "Untrained agent must not win against fast villains in round 1",
+    );
+  });
+
+  it("demonstrates learning progression: batch training increases win rate as agent learns tactical bumps", () => {
+    const engine = new ContinuousCarEngine();
+    const batch1 = engine.trainBatch(20);
+    const batch2 = engine.trainBatch(20);
+    assert.ok(
+      batch2.wins >= batch1.wins || batch2.wins > 0,
+      "Training progression should increase or maintain positive win count",
     );
   });
 

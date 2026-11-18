@@ -86,7 +86,7 @@ export class ContinuousCarEngine {
         id: "villain-1",
         name: "Red Phantom",
         color: "#ef4444",
-        targetRadius: 74,
+        targetRadius: 78,
         baseSpeed: 3.5,
         startProgress: 0.97,
         lapCount: -1,
@@ -95,7 +95,7 @@ export class ContinuousCarEngine {
         id: "villain-2",
         name: "Purple Viper",
         color: "#a855f7",
-        targetRadius: 61,
+        targetRadius: 57,
         baseSpeed: 3.3,
         startProgress: 0.94,
         lapCount: -1,
@@ -312,17 +312,6 @@ export class ContinuousCarEngine {
       if (Math.random() < 0.15 && s.boostMeter > 30) {
         shouldBoost = true;
       }
-    } else {
-      // Strategic boost when alignment is good and forward is clear
-      if (
-        Math.abs(steering) < 0.08 &&
-        s.sensorForward > 45 &&
-        s.speed < 2.85 &&
-        s.boostMeter > 35 &&
-        !s.isSkidding
-      ) {
-        shouldBoost = true;
-      }
     }
 
     return {
@@ -448,7 +437,9 @@ export class ContinuousCarEngine {
           // Villain bumps agent: agent takes hit in direction and speed
           s.angle += Math.random() > 0.5 ? 0.18 : -0.18;
           s.speed = Math.max(1.2, s.speed * 0.82);
-          v.speed = Math.max(1.4, v.speed * 0.72);
+          v.speed = Math.max(2.8, v.speed * 0.88);
+          const currentR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
+          v.angle += v.targetRadius < currentR ? -0.1 : 0.1;
           s.lossOfControl = 0.35;
           s.isSkidding = true;
           bumpReward -= 3.5;
@@ -693,17 +684,17 @@ export class ContinuousCarEngine {
       if (s.lapProgress > 0.85 && currentProgress < 0.15) {
         s.lapCount += 1;
         reward += s.racePosition === 1 ? 50.0 : 15.0;
-        if (s.racePosition === 1) {
-          s.isOver = true;
-          done = true;
-        }
+        s.isOver = true;
+        done = true;
       }
       s.lapProgress = currentProgress;
 
-      if (s.villains.some((v) => v.lapCount >= 1)) {
-        s.isOver = true;
-        done = true;
+      if (s.villains.some((v) => v.lapCount >= 1) && s.racePosition > 1) {
         reward -= 25.0;
+        if (s.villains.some((v) => v.totalProgress >= 1.35)) {
+          s.isOver = true;
+          done = true;
+        }
       }
     }
 
