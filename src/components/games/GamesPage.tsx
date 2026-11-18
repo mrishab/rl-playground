@@ -11,7 +11,7 @@ export function GamesPage() {
   const p = useGamesPage();
 
   return (
-    <PageLayout icon={Gamepad2} title="Competitive RL Games">
+    <PageLayout icon={Gamepad2} title="RL Games & Environments">
       <div className="space-y-3 max-w-4xl mx-auto w-full">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <GameTabBar activeGame={p.activeGame} onSelect={p.setActiveGame} />
@@ -23,6 +23,8 @@ export function GamesPage() {
           <GameControlsRow
             isPlaying={p.isPlaying}
             speed={p.speed}
+            controllerMode={p.controllerMode}
+            onToggleController={p.setControllerMode}
             onTogglePlay={p.togglePlay}
             onStep={p.stepSingle}
             onTrain={p.trainBatch}
@@ -37,6 +39,10 @@ export function GamesPage() {
             pacmanState={p.pacmanState}
             chessState={p.chessState}
             strategyState={p.strategyState}
+            iceMazeState={p.iceMazeState}
+            slotMachineState={p.slotMachineState}
+            lemonadeState={p.lemonadeState}
+            continuousCarState={p.continuousCarState}
           />
 
           <GameHyperparamsCard

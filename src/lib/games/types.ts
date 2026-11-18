@@ -1,4 +1,14 @@
-export type GameId = "pong" | "pacman" | "chess" | "strategy";
+export type GameId =
+  | "pong"
+  | "pacman"
+  | "chess"
+  | "strategy"
+  | "ice-maze"
+  | "slot-machine"
+  | "lemonade"
+  | "continuous-car";
+
+export type ControllerMode = "rl" | "search";
 
 export type RLAlgorithm = "q-learning" | "sarsa";
 
@@ -121,4 +131,103 @@ export type StrategyState = {
   winner: "agent" | "opponent" | "draw" | null;
   lastReward: number;
   lastActionDesc: string;
+};
+
+// Ice Maze Types
+export type IceMazeState = {
+  agentRow: number;
+  agentCol: number;
+  goalRow: number;
+  goalCol: number;
+  hazards: [number, number][];
+  walls: [number, number][];
+  slipRate: number;
+  stepCount: number;
+  isOver: boolean;
+  won: boolean;
+  lastReward: number;
+  lastSlip: { intended: string; actual: string } | null;
+  aStarPath: [number, number][];
+  controller: ControllerMode;
+  failedBySlip: boolean;
+  visitedPath: [number, number][];
+};
+
+// Slot Machine Bandit Types
+export type SlotMachineArm = {
+  id: number;
+  name: string;
+  symbol: string;
+  color: string;
+  winProb: number;
+  payout: number;
+  pulls: number;
+  wins: number;
+  estimatedQ: number;
+  trueEV: number;
+};
+
+export type SlotMachineState = {
+  machines: SlotMachineArm[];
+  reels: [string, string, string];
+  isSpinning: boolean;
+  lastPullArm: number;
+  lastPayout: number;
+  bankroll: number;
+  totalPulls: number;
+  controller: ControllerMode;
+  searchStrategyDesc: string;
+  lastReward: number;
+  isOver: boolean;
+};
+
+// Dynamic Inventory Management (Lemonade Stand) Types
+export type WeatherType = "Sunny" | "Cloudy" | "Rainy" | "Heatwave";
+
+export type LemonadeState = {
+  day: number;
+  weather: WeatherType;
+  forecastTomorrow: WeatherType;
+  cupsPrepped: number;
+  customerDemand: number;
+  cupsSold: number;
+  cupsSpoiled: number;
+  customersLost: number;
+  dailyProfit: number;
+  cashBalance: number;
+  totalRevenue: number;
+  totalSpoilageCost: number;
+  totalStockoutLost: number;
+  lastReward: number;
+  isOver: boolean;
+  controller: ControllerMode;
+  learnedPolicy: Record<WeatherType, number>;
+};
+
+// Continuous Track Autonomous Car Types
+export type NeuralNetworkApproximator = {
+  weightsIn: number[][]; // 4 inputs x 8 hidden neurons
+  biasHidden: number[]; // 8
+  weightsOut: number[]; // 8 hidden x 1 output
+  biasOut: number;
+  hiddenActivations: number[];
+};
+
+export type ContinuousCarState = {
+  x: number;
+  y: number;
+  angle: number; // in radians
+  speed: number;
+  sensorLeft: number;
+  sensorRight: number;
+  sensorForward: number;
+  steering: number;
+  lapCount: number;
+  lapProgress: number; // 0 to 1
+  isCollided: boolean;
+  isOver: boolean;
+  lastReward: number;
+  controller: ControllerMode;
+  neuralNetwork: NeuralNetworkApproximator;
+  trackPath: [number, number][];
 };

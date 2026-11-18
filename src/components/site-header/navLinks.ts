@@ -18,7 +18,11 @@ export const NAV_LINKS = [
       p.startsWith("/pong") ||
       p.startsWith("/pacman") ||
       p.startsWith("/chess") ||
-      p.startsWith("/strategy"),
+      p.startsWith("/strategy") ||
+      p.startsWith("/ice-maze") ||
+      p.startsWith("/slot-machine") ||
+      p.startsWith("/lemonade") ||
+      p.startsWith("/continuous-car"),
   },
   {
     to: "/gridworld",

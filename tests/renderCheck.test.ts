@@ -226,6 +226,50 @@ describe("Application State & Action Workflows with Zero Errors", () => {
       store.resetEpisode();
       assert.ok(useGamesStore.getState().strategyState !== null);
 
+      // Test Ice Maze
+      store.setActiveGame("ice-maze");
+      store.setIceMazeSlipRate(0.4);
+      assert.equal(useGamesStore.getState().iceMazeState.slipRate, 0.4);
+      store.setControllerMode("search");
+      assert.equal(useGamesStore.getState().controllerMode, "search");
+      store.stepSingle();
+      store.setControllerMode("rl");
+      store.trainBatch(10);
+      assert.ok(useGamesStore.getState().metrics["ice-maze"].episodes >= 10);
+      store.resetEpisode();
+      assert.ok(useGamesStore.getState().iceMazeState !== null);
+
+      // Test Slot Machine
+      store.setActiveGame("slot-machine");
+      store.stepSingle();
+      store.trainBatch(15);
+      assert.ok(
+        useGamesStore.getState().metrics["slot-machine"].episodes >= 15,
+      );
+      store.resetEpisode();
+      assert.ok(useGamesStore.getState().slotMachineState !== null);
+
+      // Test Lemonade
+      store.setActiveGame("lemonade");
+      store.stepSingle();
+      store.trainBatch(10);
+      assert.ok(useGamesStore.getState().metrics.lemonade.episodes >= 10);
+      store.resetEpisode();
+      assert.ok(useGamesStore.getState().lemonadeState !== null);
+
+      // Test Continuous Car
+      store.setActiveGame("continuous-car");
+      store.stepSingle();
+      store.trainBatch(10);
+      assert.ok(
+        useGamesStore.getState().metrics["continuous-car"].episodes >= 10,
+      );
+      store.resetEpisode();
+      assert.ok(useGamesStore.getState().continuousCarState !== null);
+
+      // Return to strategy for strategy assertions
+      store.setActiveGame("strategy");
+
       // Test hyperparam updates
       store.setHyperparams({ learningRate: 0.3, explorationRate: 0.2 });
       assert.equal(useGamesStore.getState().hyperparams.learningRate, 0.3);

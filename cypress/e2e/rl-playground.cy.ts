@@ -302,30 +302,140 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
     });
   });
 
-  describe("Competitive RL Games Lab", () => {
+  describe("RL Games & Environments Lab", () => {
     beforeEach(() => {
       cy.visit("games");
     });
 
-    it("renders competitive games page, tabs, and initial Pong view", () => {
-      cy.contains("Competitive RL Games").should("be.visible");
-      cy.contains("Pong (Ping Pong)").should("be.visible");
-      cy.contains("Pac-Man (Maze)").should("be.visible");
-      cy.contains("Grid Chess").should("be.visible");
-      cy.contains("Live Run").should("be.visible");
+    it("renders games page header, all 8 game tabs, and controller mode toggles", () => {
+      cy.contains("RL Games & Environments").should("be.visible");
+
+      // Verify all 8 game tabs
+      cy.contains("button", "Ice Maze").should("be.visible");
+      cy.contains("button", "Slot Machine").should("be.visible");
+      cy.contains("button", "Lemonade Stand").should("be.visible");
+      cy.contains("button", "Continuous Car").should("be.visible");
+      cy.contains("button", "Pong").should("be.visible");
+      cy.contains("button", "Pac-Man").should("be.visible");
+      cy.contains("button", "Grid Chess").should("be.visible");
+      cy.contains("button", "Grid Strategy").should("be.visible");
+
+      // Verify controller mode toggle buttons
+      cy.contains("button", "Train with RL").should("be.visible");
+      cy.contains("button", "Try with A* / Search").should("be.visible");
     });
 
-    it("switches to Pac-Man and Grid Chess tabs smoothly", () => {
-      cy.contains("Pac-Man (Maze)").click();
-      cy.contains("Pac-Man (Maze)").should("exist");
+    it("toggles controller mode between RL and Search / A* Heuristics", () => {
+      // Toggle to search mode
+      cy.contains("button", "Try with A* / Search").click();
+      cy.contains("Search / Deterministic Mode Active").should("be.visible");
 
-      cy.contains("Grid Chess").click();
-      cy.contains("Grid Chess").should("exist");
+      // Toggle back to RL mode
+      cy.contains("button", "Train with RL").click();
+      cy.contains("Reinforcement Learning Policy Active").should("be.visible");
     });
 
-    it("executes batch training and updates metrics", () => {
-      cy.contains("button", "+50").click();
-      cy.contains("Episodes").should("exist");
+    describe("Game 1: The Stochastic Gridworld with Slippery Tiles (The Ice Maze)", () => {
+      beforeEach(() => {
+        cy.contains("button", "Ice Maze").click();
+      });
+
+      it("renders ice maze grid, hazard pits, and ice wind slip rate slider", () => {
+        cy.contains("Ice Wind / Slip Rate:").should("be.visible");
+        cy.contains("Pos: [").should("be.visible");
+      });
+
+      it("displays search comparison banner and executes steps in both modes", () => {
+        // Search mode
+        cy.contains("button", "Try with A* / Search").click();
+        cy.contains("Search / Deterministic Mode Active").should("be.visible");
+        cy.contains("button", "Step").click();
+
+        // Train with RL mode
+        cy.contains("button", "Train with RL").click();
+        cy.contains("Reinforcement Learning Policy Active").should(
+          "be.visible",
+        );
+        cy.contains("button", "+50").click();
+        cy.contains("Episodes").should("exist");
+      });
+    });
+
+    describe("Game 2: A Simplified Multi-Armed Bandit (The Slot Machine)", () => {
+      beforeEach(() => {
+        cy.contains("button", "Slot Machine").click();
+      });
+
+      it("renders slot reels, bankroll, and all 4 slot machine arm cards", () => {
+        cy.contains("Lucky Sevens").should("be.visible");
+        cy.contains("Wild Cherry").should("be.visible");
+        cy.contains("Neon Diamonds").should("be.visible");
+        cy.contains("Golden Horseshoe").should("be.visible");
+        cy.contains("Pulls:").should("be.visible");
+        cy.contains("EV:").should("be.visible");
+      });
+
+      it("steps slot pulls and trains batch", () => {
+        cy.contains("button", "Step").click();
+        cy.contains("button", "+50").click();
+        cy.contains("Episodes").should("exist");
+      });
+    });
+
+    describe("Game 3: Dynamic Inventory Management (The Lemonade Stand)", () => {
+      beforeEach(() => {
+        cy.contains("button", "Lemonade Stand").click();
+      });
+
+      it("renders financial ledger, weather forecast, and learned weather policy table", () => {
+        cy.contains("Day 1:").should("be.visible");
+        cy.contains("Weather State").should("be.visible");
+        cy.contains("RL Policy (Cups)").should("be.visible");
+        cy.contains("Static CSP").should("be.visible");
+      });
+
+      it("steps daily inventory cycle and batch trains seasons", () => {
+        cy.contains("button", "Step").click();
+        cy.contains("button", "+50").click();
+        cy.contains("Episodes").should("exist");
+      });
+    });
+
+    describe("Game 4: Toy Autonomous Car on Continuous Track", () => {
+      beforeEach(() => {
+        cy.contains("button", "Continuous Car").click();
+      });
+
+      it("renders continuous track canvas, raycast wall sensors, and telemetry", () => {
+        cy.contains("dL:").should("be.visible");
+        cy.contains("dF:").should("be.visible");
+        cy.contains("dR:").should("be.visible");
+        cy.contains("Laps:").should("be.visible");
+      });
+
+      it("steps car kinematics and trains neural network continuous policy", () => {
+        cy.contains("button", "Step").click();
+        cy.contains("button", "+50").click();
+        cy.contains("Episodes").should("exist");
+      });
+    });
+
+    describe("Classic Games: Pong, Pac-Man, Grid Chess, and Grid Strategy", () => {
+      it("switches through all classic games and trains episodes", () => {
+        cy.contains("button", "Pong").click();
+        cy.contains("button", "Step").click();
+
+        cy.contains("button", "Pac-Man").click();
+        cy.contains("button", "Step").click();
+
+        cy.contains("button", "Grid Chess").click();
+        cy.contains("button", "Step").click();
+
+        cy.contains("button", "Grid Strategy").click();
+        cy.contains("button", "Step").click();
+        cy.contains("button", "+50").click();
+        cy.contains("Episodes").should("exist");
+      });
     });
   });
 });

@@ -2,7 +2,7 @@
 
 An extensive, interactive Reinforcement Learning laboratory for undergraduate students and researchers to explore fundamentals and core algorithms of Reinforcement Learning in the browser.
 
-Live application: **[https://mrishab.github.io/RL-Playground/](https://mrishab.github.io/RL-Playground/)**
+Live application: **[https://mrishab.github.io/rl-playground/](https://mrishab.github.io/rl-playground/)**
 
 ## ✨ Core Modules & Learning Labs
 
@@ -56,6 +56,23 @@ Live application: **[https://mrishab.github.io/RL-Playground/](https://mrishab.g
 
 - Comprehensive mathematical reference covering MDPs, Bellman Equations, and TD learning.
 - 5-question interactive conceptual quiz with instant scoring and pedagogical explanations.
+
+### 6. Interactive RL Games & Search vs RL Playground (`/games`)
+
+- **Interactive Comparison Toggle:** Switch seamlessly between "Train with RL" and "Try with A\* / Search" to demonstrate where deterministic search fails and why reinforcement learning is required.
+- **The Stochastic Gridworld with Slippery Tiles ("The Ice Maze"):**
+  - Real-time wind/slip slider ($P(\text{slip})$ from 0% to 60%).
+  - Demonstrates why deterministic $A^*$ search breaks or crashes when slipping into hazard pits, while RL learns safe paths with obstacle buffers.
+- **Simplified Multi-Armed Bandit ("The Slot Machine"):**
+  - 4 slot machines with distinct unknown probability distributions.
+  - Demonstrates why Search/CSPs fail (zero transition states, pure statistical optimization) and how RL balances exploration vs exploitation.
+- **Dynamic Inventory Management ("The Lemonade Stand"):**
+  - Daily decision making on prep inventory facing weather-dependent stochastic customer demand.
+  - Highlights why static CSP planning causes stockouts or ingredient spoilage, and how RL learns state-conditioned inventory balance.
+- **Toy Autonomous Car on a Continuous Track:**
+  - 2D curved race track with continuous wall distance raycasting sensors.
+  - Demonstrates continuous infinite state-action spaces where discrete tree search fails and function approximation (Deep RL / Neural Networks) is required.
+- **Classic Games:** Pong, Pac-Man Maze, Grid Chess, and Tactical Grid Strategy.
 
 ---
 

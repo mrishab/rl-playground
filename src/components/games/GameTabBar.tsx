@@ -1,4 +1,13 @@
-import { Gamepad2, Ghost, Swords, Shield } from "lucide-react";
+import {
+  Gamepad2,
+  Ghost,
+  Swords,
+  Shield,
+  Snowflake,
+  Coins,
+  Citrus,
+  Car,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { GameId } from "@/lib/games/types";
 
@@ -8,21 +17,25 @@ type Props = {
 };
 
 const GAMES: { id: GameId; label: string; icon: typeof Gamepad2 }[] = [
-  { id: "pong", label: "Pong (Ping Pong)", icon: Gamepad2 },
-  { id: "pacman", label: "Pac-Man (Maze)", icon: Ghost },
+  { id: "ice-maze", label: "Ice Maze", icon: Snowflake },
+  { id: "slot-machine", label: "Slot Machine", icon: Coins },
+  { id: "lemonade", label: "Lemonade Stand", icon: Citrus },
+  { id: "continuous-car", label: "Continuous Car", icon: Car },
+  { id: "pong", label: "Pong", icon: Gamepad2 },
+  { id: "pacman", label: "Pac-Man", icon: Ghost },
   { id: "chess", label: "Grid Chess", icon: Swords },
   { id: "strategy", label: "Grid Strategy", icon: Shield },
 ];
 
 export function GameTabBar({ activeGame, onSelect }: Props) {
   return (
-    <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-lg border border-border/40 w-fit">
+    <div className="flex flex-wrap items-center gap-1 p-1 bg-muted/40 rounded-lg border border-border/40 w-fit">
       {GAMES.map(({ id, label, icon: Icon }) => (
         <Button
           key={id}
           size="sm"
           variant={activeGame === id ? "default" : "ghost"}
-          className={`h-8 px-3 text-xs gap-1.5 font-medium transition-all ${
+          className={`h-7 px-2.5 text-xs gap-1.5 font-medium transition-all ${
             activeGame === id
               ? "shadow-xs font-semibold"
               : "text-muted-foreground"
