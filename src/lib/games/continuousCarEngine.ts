@@ -667,7 +667,7 @@ export class ContinuousCarEngine {
       if (s.isCollided) {
         // Crash penalty update: strongly steer away from collided barrier & reduce throttle
         for (let h = 0; h < 8; h++) {
-          nn.weightsOut[h] += lr * -20.0 * nn.hiddenActivations[h] * -delta;
+          nn.weightsOut[h] += lr * 20.0 * nn.hiddenActivations[h] * -delta;
           if (nn.weightsThrottle) {
             nn.weightsThrottle[h] -= lr * 5.0 * nn.hiddenActivations[h];
           }
