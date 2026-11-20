@@ -16,6 +16,9 @@ export function TheoryQuizItem({
   submitted,
   onSelect,
 }: Props) {
+  const isAnswered = selectedOpt !== undefined;
+  const showReview = submitted && isAnswered;
+
   return (
     <div className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
       <div className="flex items-start gap-2">
@@ -34,12 +37,12 @@ export function TheoryQuizItem({
             optIdx={optIdx}
             isSelected={selectedOpt === optIdx}
             isCorrect={optIdx === q.correctIndex}
-            submitted={submitted}
+            submitted={showReview}
             onSelect={onSelect}
           />
         ))}
       </div>
-      {submitted && (
+      {showReview && (
         <div className="pl-6 pt-1 text-[11px] text-muted-foreground">
           <span className="font-semibold text-foreground">Explanation: </span>
           {q.explanation}

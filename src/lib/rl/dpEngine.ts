@@ -203,6 +203,106 @@ export class DPEngine {
     return { delta, converged: this.isConverged };
   }
 
+  evaluatePolicySweep(): number {
+    let delta = 0;
+    const newValues: StateValueTable = { ...this.values };
+    for (let r = 0; r < this.numRows; r++) {
+      for (let c = 0; c < this.numCols; c++) {
+        const key = stateKey(r, c);
+        if (r === this.goalPos[0] && c === this.goalPos[1]) {
+          newValues[key] = 0;
+          continue;
+        }
+        if (this.obstacles.has(key)) continue;
+
+        const currentAct = this.policy[key] ?? 0;
+        const transitions = this.getTransitions(r, c, currentAct);
+        let expected = 0;
+        for (const t of transitions) {
+          const nextKey = stateKey(t.nextState[0], t.nextState[1]);
+          const nextV = t.isTerminal ? 0 : this.values[nextKey] || 0;
+          expected += t.prob * (t.reward + this.gamma * nextV);
+        }
+
+        const oldV = this.values[key] || 0;
+        const diff = Math.abs(oldV - expected);
+        if (diff > delta) delta = diff;
+        newValues[key] = expected;
+      }
+    }
+    this.values = newValues;
+    return delta;
+  }
+
+  evaluatePolicy(maxSweeps: number = 50): number {
+    let sweeps = 0;
+    while (sweeps < maxSweeps) {
+      const delta = this.evaluatePolicySweep();
+      sweeps++;
+      if (delta < this.theta) break;
+    }
+    return sweeps;
+  }
+
+  improvePolicy(): { policyStable: boolean; changes: number } {
+    let policyStable = true;
+    let changes = 0;
+    const newPolicy: StatePolicyTable = { ...this.policy };
+
+    for (let r = 0; r < this.numRows; r++) {
+      for (let c = 0; c < this.numCols; c++) {
+        const key = stateKey(r, c);
+        if (r === this.goalPos[0] && c === this.goalPos[1]) continue;
+        if (this.obstacles.has(key)) continue;
+
+        const oldAct = this.policy[key] ?? 0;
+        let maxExpected = -Infinity;
+        let bestAction: Action = oldAct;
+
+        for (let a = 0; a < 4; a++) {
+          const act = a as Action;
+          const transitions = this.getTransitions(r, c, act);
+          let expected = 0;
+          for (const t of transitions) {
+            const nextKey = stateKey(t.nextState[0], t.nextState[1]);
+            const nextV = t.isTerminal ? 0 : this.values[nextKey] || 0;
+            expected += t.prob * (t.reward + this.gamma * nextV);
+          }
+          if (expected > maxExpected) {
+            maxExpected = expected;
+            bestAction = act;
+          }
+        }
+
+        if (bestAction !== oldAct) {
+          policyStable = false;
+          changes++;
+        }
+        newPolicy[key] = bestAction;
+      }
+    }
+
+    this.policy = newPolicy;
+    return { policyStable, changes };
+  }
+
+  stepPolicyIteration(): { changes: number; converged: boolean } {
+    this.evaluatePolicy();
+    const { policyStable, changes } = this.improvePolicy();
+    this.sweepCount++;
+    this.isConverged = policyStable;
+    return { changes, converged: policyStable };
+  }
+
+  runPolicyIteration(maxIters: number = 30): number {
+    let count = 0;
+    while (!this.isConverged && count < maxIters) {
+      this.stepPolicyIteration();
+      count++;
+    }
+    return count;
+  }
+
   runUntilConvergence(maxSweeps: number = 500): number {
     let count = 0;
     while (!this.isConverged && count < maxSweeps) {

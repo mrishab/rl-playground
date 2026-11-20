@@ -29,6 +29,10 @@ export class BanditEngine {
     this.reset();
   }
 
+  updateConfig(patch: Partial<BanditRunConfig>): void {
+    this.config = { ...this.config, ...patch };
+  }
+
   reset(): void {
     this.stepCount = 0;
     this.cumulativeReward = 0;

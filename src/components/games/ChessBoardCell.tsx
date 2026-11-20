@@ -1,5 +1,5 @@
 import type { ChessPiece } from "@/lib/games/types";
-import { CHESS_SYMBOLS, type ChessSymbolKey } from "./chessSymbols";
+import { ChessPieceIcon } from "./ChessPieceIcon";
 
 interface Props {
   r: number;
@@ -11,27 +11,19 @@ interface Props {
 
 export function ChessBoardCell({ r, c, cell, isLastFrom, isLastTo }: Props) {
   const isLight = (r + c) % 2 === 0;
-  const symbolKey = cell
-    ? (`${cell.color}-${cell.type}` as ChessSymbolKey)
-    : null;
-  const symbol = symbolKey ? CHESS_SYMBOLS[symbolKey] : null;
 
   return (
     <div
-      className={`relative flex items-center justify-center rounded transition-[color,background-color,border-color] duration-150 ease-out text-2xl sm:text-3xl font-serif select-none ${
+      className={`relative flex items-center justify-center rounded transition-[color,background-color,border-color] duration-150 ease-out select-none ${
         isLight ? "bg-muted/40" : "bg-muted/20"
       } ${isLastTo ? "ring-2 ring-primary" : ""} ${isLastFrom ? "bg-primary/10" : ""}`}
     >
       {cell && (
-        <span
-          className={
-            cell.color === "w"
-              ? "text-primary drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-              : "text-destructive drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-          }
-        >
-          {symbol}
-        </span>
+        <ChessPieceIcon
+          type={cell.type}
+          color={cell.color}
+          className="w-7 h-7 sm:w-9 sm:h-9"
+        />
       )}
     </div>
   );

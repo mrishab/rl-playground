@@ -15,6 +15,9 @@ export function TheoryQuiz() {
     submitQuiz,
   } = useTheoryQuiz();
 
+  const answeredCount = Object.keys(selectedAnswers).length;
+  const allAnswered = answeredCount === QUIZ_QUESTIONS.length;
+
   return (
     <Card className="border-primary/30">
       <TheoryQuizHeader
@@ -34,14 +37,19 @@ export function TheoryQuiz() {
           />
         ))}
         {!submitted && (
-          <div className="flex justify-end pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
+            <span className="text-xs text-muted-foreground">
+              {allAnswered
+                ? "All questions answered. Ready to submit!"
+                : `Answer all questions to submit (${answeredCount}/${QUIZ_QUESTIONS.length})`}
+            </span>
             <Button
               size="sm"
               className="h-8 text-xs font-semibold"
-              disabled={Object.keys(selectedAnswers).length === 0}
+              disabled={!allAnswered}
               onClick={submitQuiz}
             >
-              Submit Answers
+              Submit Answers ({answeredCount}/${QUIZ_QUESTIONS.length})
             </Button>
           </div>
         )}

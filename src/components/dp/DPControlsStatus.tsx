@@ -1,4 +1,5 @@
 interface Props {
+  algorithm?: "value-iteration" | "policy-iteration";
   sweepCount: number;
   maxDelta: number;
   isConverged: boolean;
@@ -6,26 +7,29 @@ interface Props {
 }
 
 export function DPControlsStatus({
+  algorithm = "value-iteration",
   sweepCount,
   maxDelta,
   isConverged,
   theta,
 }: Props) {
+  const isPI = algorithm === "policy-iteration";
+
   return (
     <>
       <div className="grid grid-cols-2 gap-2 text-center text-xs">
         <div className="bg-muted/40 p-2 rounded border">
           <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-            Sweeps
+            {isPI ? "Iterations" : "Sweeps"}
           </div>
           <div className="text-base font-bold font-mono">{sweepCount}</div>
         </div>
         <div className="bg-muted/40 p-2 rounded border">
           <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-            Max Δ
+            {isPI ? "Policy Changes" : "Max Δ"}
           </div>
           <div className="text-base font-bold font-mono">
-            {maxDelta.toFixed(4)}
+            {isPI ? maxDelta : maxDelta.toFixed(4)}
           </div>
         </div>
       </div>
@@ -33,10 +37,12 @@ export function DPControlsStatus({
         Status:{" "}
         {isConverged ? (
           <span className="font-semibold text-success">
-            Converged (Δ &lt; {theta})
+            {isPI ? "Policy Stable (Converged)" : `Converged (Δ < ${theta})`}
           </span>
         ) : sweepCount > 0 ? (
-          <span className="font-semibold text-warning">Iterating...</span>
+          <span className="font-semibold text-warning">
+            {isPI ? "Improving Policy..." : "Iterating..."}
+          </span>
         ) : (
           <span className="text-muted-foreground">Ready</span>
         )}

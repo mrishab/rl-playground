@@ -46,4 +46,13 @@ describe("Dynamic Programming Engine", () => {
     assert.ok(inspection.formula.length > 0);
     assert.ok(inspection.actionValues[0].transitions.length > 0);
   });
+
+  it("should converge using policy iteration on a 4x4 grid", () => {
+    const dp = new DPEngine(RULES, 0.9, 0.001, [0, 0], [3, 3]);
+    const iters = dp.runPolicyIteration(20);
+    assert.ok(iters > 0);
+    assert.ok(dp.isConverged);
+    const neighborV = dp.values["3,2"];
+    assert.ok(neighborV > 5);
+  });
 });

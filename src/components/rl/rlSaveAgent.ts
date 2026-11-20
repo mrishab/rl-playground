@@ -19,7 +19,7 @@ export function saveCurrentRLAgent(
         store.stepsHistory.length
       : 0;
 
-  const agent = saveAgent({
+  return saveAgent({
     name: `${store.params.algorithm.toUpperCase()} Agent (${store.gridSize}x${store.gridSize})`,
     algorithm: store.params.algorithm,
     algorithmName: store.params.algorithm.toUpperCase(),
@@ -43,6 +43,4 @@ export function saveCurrentRLAgent(
     },
     qTable: store.qTable,
   });
-
-  alert(`Saved agent "${agent.name}" to Saved Policies!`);
 }

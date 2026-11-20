@@ -84,18 +84,31 @@ export const useBanditStore = create<BanditStoreState>((set, get) => ({
   },
 
   setConfig: (patch) => {
-    const nextConfig = { ...get().config, ...patch };
-    engine = new BanditEngine(nextConfig);
-    set({
-      config: nextConfig,
-      arms: [...engine.arms],
-      stepCount: 0,
-      cumulativeReward: 0,
-      averageReward: 0,
-      optimalRate: 0,
-      history: [],
-      isRunning: false,
-    });
+    const current = get().config;
+    const nextConfig = { ...current, ...patch };
+
+    const requiresReset =
+      (patch.algorithm !== undefined &&
+        patch.algorithm !== current.algorithm) ||
+      (patch.numArms !== undefined && patch.numArms !== current.numArms) ||
+      (patch.initialQ !== undefined && patch.initialQ !== current.initialQ);
+
+    if (requiresReset) {
+      engine = new BanditEngine(nextConfig);
+      set({
+        config: nextConfig,
+        arms: [...engine.arms],
+        stepCount: 0,
+        cumulativeReward: 0,
+        averageReward: 0,
+        optimalRate: 0,
+        history: [],
+        isRunning: false,
+      });
+    } else {
+      engine.updateConfig(patch);
+      set({ config: nextConfig });
+    }
   },
 
   reset: () => {

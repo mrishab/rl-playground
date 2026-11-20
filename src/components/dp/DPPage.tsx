@@ -3,6 +3,7 @@ import { GitCommit } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { useDPStore } from "@/stores/dpStore";
 import { DPControlsCard } from "./DPControlsCard";
+import { DPParametersCard } from "./DPParametersCard";
 import { DPGridCard } from "./DPGridCard";
 import { DPInspectorCard } from "./DPInspectorCard";
 
@@ -21,7 +22,10 @@ export function DPPage() {
     <PageLayout icon={GitCommit} title="Dynamic Programming" hideActionGate>
       <div className="space-y-3 max-w-6xl mx-auto w-full">
         <div className="grid gap-3 lg:grid-cols-3">
-          <DPControlsCard store={store} />
+          <div className="space-y-3">
+            <DPControlsCard store={store} />
+            <DPParametersCard rules={store.rules} />
+          </div>
           <DPGridCard
             store={store}
             selectedCell={selectedCell}

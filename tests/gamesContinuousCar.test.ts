@@ -455,4 +455,51 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     );
     assert.ok(engine.state.lapCount > 0, "Trained agent should complete laps");
   });
+
+  it("prevents driving in opposite direction and penalizes wrong-way heading as collision", () => {
+    const engine = new ContinuousCarEngine();
+    // Force car to turn into opposite direction (steer sharp left)
+    let done = false;
+    for (let s = 0; s < 30; s++) {
+      const res = engine.step(-0.25);
+      if (res.done) {
+        done = true;
+        break;
+      }
+    }
+    assert.equal(
+      done,
+      true,
+      "Attempting to drive in opposite direction must terminate episode",
+    );
+    assert.equal(
+      engine.state.isCollided,
+      true,
+      "Opposite direction must trigger collision state",
+    );
+    assert.equal(
+      engine.state.lapCount,
+      0,
+      "Opposite direction must not count any laps",
+    );
+  });
+
+  it("prevents reverse crossing of the finish line from counting a lap or advancing progress", () => {
+    const engine = new ContinuousCarEngine();
+    // Move car backwards past start line (x = 158 instead of 160)
+    engine.state.x = 158;
+    engine.state.y = engine.centerY - 67.5;
+    engine.state.lapProgress = 0.05;
+
+    engine.step(0);
+    assert.equal(
+      engine.state.lapCount,
+      0,
+      "Reverse crossing must not count a lap",
+    );
+    assert.ok(
+      engine.state.lapProgress < 0.15,
+      "Reverse crossing must not credit near-full lap progress (must reset to 0.0)",
+    );
+  });
 });

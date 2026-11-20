@@ -7,6 +7,7 @@ import type {
 } from "../lib/rl/types";
 
 export type DPStoreState = {
+  algorithm: "value-iteration" | "policy-iteration";
   rules: RLEnvironmentRules;
   gamma: number;
   theta: number;
@@ -17,6 +18,7 @@ export type DPStoreState = {
   isConverged: boolean;
   inspectedState: DPStateInspection | null;
 
+  setAlgorithm: (algorithm: "value-iteration" | "policy-iteration") => void;
   stepSweep: () => void;
   runToConvergence: () => void;
   inspectCell: (r: number, c: number) => void;
@@ -51,6 +53,7 @@ const engine = new DPEngine(
 );
 
 export const useDPStore = create<DPStoreState>((set, get) => ({
+  algorithm: "value-iteration",
   rules: DEFAULT_RULES,
   gamma: 0.95,
   theta: 0.001,
@@ -61,30 +64,58 @@ export const useDPStore = create<DPStoreState>((set, get) => ({
   isConverged: false,
   inspectedState: null,
 
+  setAlgorithm: (algorithm) => {
+    set({ algorithm });
+    get().reset();
+  },
+
   stepSweep: () => {
-    const res = engine.stepValueIteration();
-    set({
-      values: { ...engine.values },
-      policy: { ...engine.policy },
-      sweepCount: engine.sweepCount,
-      maxDelta: res.delta,
-      isConverged: res.converged,
-      inspectedState: get().inspectedState
-        ? engine.inspectState(
-            get().inspectedState!.state[0],
-            get().inspectedState!.state[1],
-          )
-        : null,
-    });
+    const isPI = get().algorithm === "policy-iteration";
+    if (isPI) {
+      const res = engine.stepPolicyIteration();
+      set({
+        values: { ...engine.values },
+        policy: { ...engine.policy },
+        sweepCount: engine.sweepCount,
+        maxDelta: res.changes,
+        isConverged: res.converged,
+        inspectedState: get().inspectedState
+          ? engine.inspectState(
+              get().inspectedState!.state[0],
+              get().inspectedState!.state[1],
+            )
+          : null,
+      });
+    } else {
+      const res = engine.stepValueIteration();
+      set({
+        values: { ...engine.values },
+        policy: { ...engine.policy },
+        sweepCount: engine.sweepCount,
+        maxDelta: res.delta,
+        isConverged: res.converged,
+        inspectedState: get().inspectedState
+          ? engine.inspectState(
+              get().inspectedState!.state[0],
+              get().inspectedState!.state[1],
+            )
+          : null,
+      });
+    }
   },
 
   runToConvergence: () => {
-    engine.runUntilConvergence(200);
+    const isPI = get().algorithm === "policy-iteration";
+    if (isPI) {
+      engine.runPolicyIteration(30);
+    } else {
+      engine.runUntilConvergence(200);
+    }
     set({
       values: { ...engine.values },
       policy: { ...engine.policy },
       sweepCount: engine.sweepCount,
-      maxDelta: engine.maxDelta,
+      maxDelta: isPI ? (engine.isConverged ? 0 : 1) : engine.maxDelta,
       isConverged: engine.isConverged,
       inspectedState: get().inspectedState
         ? engine.inspectState(

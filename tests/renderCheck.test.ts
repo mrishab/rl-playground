@@ -127,6 +127,9 @@ describe("Application State & Action Workflows with Zero Errors", () => {
       useBanditStore.getState().step();
       useBanditStore.getState().stepBatch(20);
       assert.equal(useBanditStore.getState().stepCount, 21);
+      // Tuning epsilon mid-run should not reset stepCount or arms
+      useBanditStore.getState().setConfig({ epsilon: 0.3 });
+      assert.equal(useBanditStore.getState().stepCount, 21);
 
       useBanditStore.getState().setConfig({ algorithm: "ucb1", c: 2.0 });
       useBanditStore.getState().stepBatch(20);
@@ -144,6 +147,13 @@ describe("Application State & Action Workflows with Zero Errors", () => {
 
       useBanditStore.getState().reset();
       assert.equal(useBanditStore.getState().stepCount, 0);
+
+      // Verify live epsilon change does not reset bandit progress
+      useBanditStore.getState().stepBatch(10);
+      assert.equal(useBanditStore.getState().stepCount, 10);
+      useBanditStore.getState().setConfig({ epsilon: 0.25 });
+      assert.equal(useBanditStore.getState().stepCount, 10);
+      assert.equal(useBanditStore.getState().config.epsilon, 0.25);
 
       assert.equal(
         errorLogs.length,
@@ -176,6 +186,14 @@ describe("Application State & Action Workflows with Zero Errors", () => {
 
       useDPStore.getState().reset();
       assert.equal(useDPStore.getState().sweepCount, 0);
+
+      // Test Policy Iteration mode
+      useDPStore.getState().setAlgorithm("policy-iteration");
+      assert.equal(useDPStore.getState().algorithm, "policy-iteration");
+      useDPStore.getState().stepSweep();
+      assert.equal(useDPStore.getState().sweepCount, 1);
+      useDPStore.getState().runToConvergence();
+      assert.ok(useDPStore.getState().isConverged);
 
       assert.equal(errorLogs.length, 0, "Expected 0 console errors in DP lab");
     } finally {

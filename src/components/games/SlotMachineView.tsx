@@ -18,7 +18,7 @@ export function SlotMachineView({ state }: Props) {
         controller={state.controller}
         failureNotice={failureNotice}
       />
-      <div className="max-w-[380px] mx-auto space-y-2.5">
+      <div className="max-w-[560px] mx-auto space-y-2.5">
         <SlotMachineReels state={state} />
         <SlotMachineArmCard
           machines={state.machines}

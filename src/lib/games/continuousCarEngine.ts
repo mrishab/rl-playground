@@ -130,6 +130,7 @@ export class ContinuousCarEngine {
   }
 
   createInitialState(): ContinuousCarState {
+    this.agentLapMidpoint = false;
     const trackMidRadius = (this.innerRadius + this.outerRadius) / 2;
     const startX = this.centerX;
     const startY = this.centerY - trackMidRadius;
@@ -654,12 +655,20 @@ export class ContinuousCarEngine {
     const bumpReward = this.handleCarBumps();
     this.computeRaceStandings();
 
-    // Barrier collision detection
+    // Collision detection: inner/outer barrier OR facing opposite direction (wrong-way violation)
     const dCenter = Math.hypot(s.x - this.centerX, s.y - this.centerY);
+    const angleFromCenter = Math.atan2(s.y - this.centerY, s.x - this.centerX);
+    const idealHeading = angleFromCenter + Math.PI / 2;
+    const headingAlignment = Math.cos(s.angle - idealHeading);
+
     let reward = 0;
     let done = false;
 
-    if (dCenter <= this.innerRadius + 4 || dCenter >= this.outerRadius - 4) {
+    if (
+      dCenter <= this.innerRadius + 4 ||
+      dCenter >= this.outerRadius - 4 ||
+      headingAlignment <= 0
+    ) {
       s.isCollided = true;
       s.isOver = true;
       reward = -50.0;
@@ -670,14 +679,11 @@ export class ContinuousCarEngine {
       const centeringDeviation = Math.abs(dCenter - trackMidRadius) / 22.5;
       const centeringReward = Math.max(0, 1.0 - centeringDeviation);
 
-      const angleFromCenter = Math.atan2(
-        s.y - this.centerY,
-        s.x - this.centerX,
-      );
-      const idealHeading = angleFromCenter + Math.PI / 2;
-      const headingAlignment = Math.cos(s.angle - idealHeading);
-
-      const baseReward = 0.5 + 1.5 * centeringReward + 2.0 * headingAlignment;
+      // Strong penalty if pointing off tangent towards wrong way
+      const wrongWayPenalty =
+        headingAlignment < 0.4 ? (0.4 - headingAlignment) * 15.0 : 0;
+      const baseReward =
+        0.5 + 1.5 * centeringReward + 2.0 * headingAlignment - wrongWayPenalty;
       const speedReward = (s.speed / 4.0) * 1.0;
       const gripPenalty = s.lossOfControl * 2.5;
       const rankReward =
@@ -688,13 +694,24 @@ export class ContinuousCarEngine {
       // Lap tracking
       let currentProgress = (angleFromCenter + Math.PI / 2) / (2 * Math.PI);
       if (currentProgress < 0) currentProgress += 1;
+
+      // Disallow reverse crossing: jumping backwards across the finish line (e.g. 0.02 -> 0.98)
+      if (s.lapProgress < 0.15 && currentProgress > 0.85) {
+        this.agentLapMidpoint = false;
+        currentProgress = 0.0;
+      }
+
       if (currentProgress > 0.35 && currentProgress < 0.65) {
         this.agentLapMidpoint = true;
       }
+
+      // Valid forward lap completion: requires forward progress across finish line,
+      // having passed the midpoint, and pointing forward along the race direction
       if (
         s.lapProgress > 0.85 &&
         currentProgress < 0.15 &&
-        this.agentLapMidpoint
+        this.agentLapMidpoint &&
+        headingAlignment > 0.2
       ) {
         s.lapCount += 1;
         this.agentLapMidpoint = false;

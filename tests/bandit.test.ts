@@ -54,4 +54,21 @@ describe("Multi-Armed Bandit Engine", () => {
     assert.equal(bandit.history.length, 0);
     assert.equal(bandit.cumulativeReward, 0);
   });
+
+  it("should allow mid-run epsilon tuning without resetting arms or step count", () => {
+    const bandit = new BanditEngine({
+      algorithm: "epsilon-greedy",
+      epsilon: 0.1,
+    });
+    bandit.stepBatch(25);
+    const initialTrueMeans = bandit.arms.map((a) => a.trueMean);
+    assert.equal(bandit.stepCount, 25);
+
+    // Live update epsilon mid-run
+    bandit.config.epsilon = 0.4;
+    bandit.stepBatch(25);
+    assert.equal(bandit.stepCount, 50);
+    const newTrueMeans = bandit.arms.map((a) => a.trueMean);
+    assert.deepEqual(newTrueMeans, initialTrueMeans);
+  });
 });
