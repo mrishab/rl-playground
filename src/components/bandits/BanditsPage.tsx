@@ -14,10 +14,10 @@ export function BanditsPage() {
   useEffect(() => {
     if (!animating) return;
     const interval = setInterval(() => {
-      store.step();
+      useBanditStore.getState().step();
     }, 80);
     return () => clearInterval(interval);
-  }, [animating, store]);
+  }, [animating]);
 
   const optimalIdx = store.arms.reduce(
     (maxIdx, arm, idx, arr) =>

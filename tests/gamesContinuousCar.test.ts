@@ -428,7 +428,7 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     assert.equal(engine.villainErrorRate, 0.5);
 
     let errorEvents = 0;
-    for (let s = 0; s < 60; s++) {
+    for (let s = 0; s < 300; s++) {
       engine.stepVillains();
       if (engine.state.villains.some((v) => v.isError)) {
         errorEvents++;

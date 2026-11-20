@@ -21,7 +21,7 @@ export function SlotMachineArmCard({ machines, lastArm }: Props) {
             }`}
           >
             <div className="flex items-center justify-between gap-1 font-medium">
-              <span className="flex items-center gap-1 min-w-0">
+              <span className="flex items-center gap-1 min-w-0" title={m.name}>
                 <span className="shrink-0">{m.symbol}</span>
                 <span className="text-[11px] font-semibold truncate">
                   {m.name}

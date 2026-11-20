@@ -45,6 +45,26 @@ describe("Dynamic Programming Engine", () => {
     assert.equal(inspection.state[1], 0);
     assert.ok(inspection.formula.length > 0);
     assert.ok(inspection.actionValues[0].transitions.length > 0);
+
+    // Test goal, obstacle, and hazard cell inspection
+    const goalInsp = dp.inspectState(3, 3);
+    assert.ok(goalInsp.formula.includes("Terminal Goal"));
+
+    const dpWithObs = new DPEngine(
+      RULES,
+      0.9,
+      0.001,
+      [0, 0],
+      [3, 3],
+      [],
+      [[1, 1]],
+    );
+    const obsInsp = dpWithObs.inspectState(1, 1);
+    assert.ok(obsInsp.formula.includes("Obstacle"));
+
+    const dpWithHaz = new DPEngine(RULES, 0.9, 0.001, [0, 0], [3, 3], [[1, 2]]);
+    const hazInsp = dpWithHaz.inspectState(1, 2);
+    assert.ok(hazInsp.formula.includes("Hazard Pit"));
   });
 
   it("should converge using policy iteration on a 4x4 grid", () => {

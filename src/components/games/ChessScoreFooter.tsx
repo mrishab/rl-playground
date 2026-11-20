@@ -26,7 +26,10 @@ export function ChessScoreFooter({
           </span>
         )}
       </div>
-      <div className="text-[10px] text-muted-foreground text-center font-medium px-1 flex-1 whitespace-nowrap">
+      <div
+        className="text-[10px] text-muted-foreground text-center font-medium px-1 flex-1 truncate min-w-0"
+        title={statusText}
+      >
         {statusText}
       </div>
       <div className="flex items-center gap-1 text-destructive shrink-0">

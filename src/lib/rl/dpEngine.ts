@@ -234,7 +234,7 @@ export class DPEngine {
     return delta;
   }
 
-  evaluatePolicy(maxSweeps: number = 50): number {
+  evaluatePolicy(maxSweeps: number = 300): number {
     let sweeps = 0;
     while (sweeps < maxSweeps) {
       const delta = this.evaluatePolicySweep();
@@ -315,7 +315,9 @@ export class DPEngine {
   inspectState(r: number, c: number): DPStateInspection {
     const key = stateKey(r, c);
     const currentV = this.values[key] || 0;
-    const bestAction = this.policy[key] || 0;
+    const bestAction = this.policy[key] ?? 0;
+    const isGoal = r === this.goalPos[0] && c === this.goalPos[1];
+    const isObstacle = this.obstacles.has(key);
 
     const actionValues: DPStateInspection["actionValues"] = {
       0: { expectedValue: 0, transitions: [] },
@@ -348,7 +350,14 @@ export class DPEngine {
       };
     }
 
-    const formula = `V*(${r},${c}) = max_a Σ P(s'|s,a)[R + γ V(s')] = ${currentV.toFixed(3)} (best: ${ACTION_NAMES[bestAction]})`;
+    let formula = `V*(${r},${c}) = max_a Σ P(s'|s,a)[R + γ V(s')] = ${currentV.toFixed(3)} (best: ${ACTION_NAMES[bestAction]})`;
+    if (isGoal) {
+      formula = `Terminal Goal (${r},${c}): Target reached with reward +${this.rules.goalReward}, V(s) = 0`;
+    } else if (isObstacle) {
+      formula = `Obstacle Cell (${r},${c}): Impassable barrier, V(s) = 0`;
+    } else if (this.hazards.has(key)) {
+      formula = `Hazard Pit (${r},${c}): Penalty ${this.rules.hazardPenalty}, V(s) = ${currentV.toFixed(3)} (best: ${ACTION_NAMES[bestAction]})`;
+    }
 
     return {
       state: [r, c],

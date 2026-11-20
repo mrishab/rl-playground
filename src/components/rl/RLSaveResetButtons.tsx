@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { RotateCcw, BookmarkPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -9,12 +9,21 @@ interface Props {
 
 export function RLSaveResetButtons({ onResetQ, onSaveAgent }: Props) {
   const [isSaved, setIsSaved] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
 
   const handleSave = () => {
     if (!onSaveAgent) return;
     onSaveAgent();
     setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setIsSaved(false), 2000);
   };
 
   const saveStyle = isSaved
