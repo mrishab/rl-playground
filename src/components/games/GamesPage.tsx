@@ -48,6 +48,7 @@ export function GamesPage() {
           <GameHyperparamsCard
             params={p.hyperparams}
             onChange={p.setHyperparams}
+            controllerMode={p.controllerMode}
           />
         </div>
       </div>

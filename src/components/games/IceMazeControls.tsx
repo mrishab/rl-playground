@@ -45,7 +45,9 @@ export function IceMazeControls({ state, onSlipChange }: Props) {
         className="w-full"
       />
       <div className="flex justify-between items-center text-[10px] font-mono">
-        <span className={`truncate max-w-[220px] ${statusColor}`}>
+        <span
+          className={`text-[10px] font-mono leading-tight flex-1 mr-2 ${statusColor}`}
+        >
           {status}
         </span>
         <span className="text-muted-foreground/80">

@@ -35,6 +35,15 @@ export function PongScoreboard({
       >
         {agentScore}
       </text>
+      <rect
+        x="60"
+        y="29"
+        width="120"
+        height="12"
+        fill="hsl(var(--card))"
+        opacity="0.9"
+        rx="2"
+      />
       <text
         x="120"
         y="38"

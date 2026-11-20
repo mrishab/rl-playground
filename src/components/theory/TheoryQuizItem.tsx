@@ -44,7 +44,16 @@ export function TheoryQuizItem({
       </div>
       {showReview && (
         <div className="pl-6 pt-1 text-[11px] text-muted-foreground">
-          <span className="font-semibold text-foreground">Explanation: </span>
+          <span className="font-semibold text-foreground">
+            {selectedOpt === q.correctIndex ? (
+              <span className="text-success font-bold mr-1">✓ Correct!</span>
+            ) : (
+              <span className="text-destructive font-bold mr-1">
+                ✗ Incorrect.
+              </span>
+            )}
+            Explanation:{" "}
+          </span>
           {q.explanation}
         </div>
       )}

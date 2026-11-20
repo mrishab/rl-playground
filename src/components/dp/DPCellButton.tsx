@@ -46,7 +46,7 @@ export function DPCellButton({
       <span className="text-[9px] font-mono font-semibold text-foreground/80">
         {label}
       </span>
-      {!isGoal && !isObstacle && (
+      {!isGoal && !isObstacle && !isHazard && (
         <span className="text-xs font-bold text-primary mt-0.5">
           {ACTION_ARROWS[policyAction]}
         </span>

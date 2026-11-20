@@ -30,17 +30,28 @@ export function saveCurrentRLAgent(
     },
     metrics: {
       totalEpisodes: store.totalEpisodes,
+      successCount: store.successCount,
       successRate: rate,
       finalReward,
       averageSteps: Math.round(avgSteps),
     },
     gridConfig: {
       gridSize: store.gridSize,
-      startPos: store.startPos,
-      goalPos: store.goalPos,
-      hazards: store.hazards,
-      obstacles: store.obstacles,
+      startPos: [...store.startPos],
+      goalPos: [...store.goalPos],
+      hazards: store.hazards.map(([r, c]) => [r, c]),
+      obstacles: store.obstacles.map(([r, c]) => [r, c]),
+      muds: (store.muds || []).map(([r, c]) => [r, c]),
+      ices: (store.ices || []).map(([r, c]) => [r, c]),
+      smartObstacles: store.smartObstacles.map((o) => ({ ...o })),
+      initialSmartObstacles: store.initialSmartObstacles.map((o) => ({ ...o })),
     },
-    qTable: store.qTable,
+    rules: { ...store.rules },
+    history: {
+      rewardHistory: [...store.rewardHistory],
+      stepsHistory: [...store.stepsHistory],
+      tdHistory: [...store.tdHistory],
+    },
+    qTable: { ...store.qTable },
   });
 }

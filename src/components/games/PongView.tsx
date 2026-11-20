@@ -16,10 +16,12 @@ export function PongView({ state }: Props) {
       <SearchComparisonBanner gameId="pong" controller={controller} />
       <div className={PONG_CARD_CONTAINER}>
         <PongCourtSvg state={state} />
-        <div className="absolute bottom-2 left-3 right-3 flex justify-between text-[10px] font-mono text-muted-foreground/80">
-          <span>Opponent (Left AI)</span>
-          <span className="text-primary">RL Agent (Right Paddle)</span>
-        </div>
+      </div>
+      <div className="flex justify-between text-[10px] font-mono text-muted-foreground/80 px-1 pt-1 border-t border-border/40">
+        <span>Opponent (Left AI)</span>
+        <span className="text-primary font-semibold">
+          RL Agent (Right Paddle)
+        </span>
       </div>
     </div>
   );

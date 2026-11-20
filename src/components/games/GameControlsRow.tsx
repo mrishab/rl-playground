@@ -46,7 +46,10 @@ export function GameControlsRow({
           />
         )}
         <GameSpeedSelector speed={speed} onSetSpeed={onSetSpeed} />
-        <GameTrainButtons onTrain={onTrain} />
+        <GameTrainButtons
+          onTrain={onTrain}
+          disabled={controllerMode === "search"}
+        />
       </div>
     </div>
   );

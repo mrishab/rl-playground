@@ -190,9 +190,11 @@ export class SlotMachineEngine {
     this.armPullsCount[chosenArm] += 1;
 
     // Running sample average Q-update
-    const stepSize = this.hyperparams.learningRate;
-    this.qValues[chosenArm] += stepSize * (payout - this.qValues[chosenArm]);
-    arm.estimatedQ = Number(this.qValues[chosenArm].toFixed(2));
+    if (s.controller === "rl") {
+      const stepSize = this.hyperparams.learningRate;
+      this.qValues[chosenArm] += stepSize * (payout - this.qValues[chosenArm]);
+      arm.estimatedQ = Number(this.qValues[chosenArm].toFixed(2));
+    }
 
     s.lastPullArm = chosenArm;
     s.lastPayout = payout;
@@ -201,8 +203,8 @@ export class SlotMachineEngine {
     s.totalPulls += 1;
     s.machines = this.arms.map((a) => ({ ...a }));
 
-    // Episode ends periodically or on bankroll exhaustion
-    const done = s.bankroll <= 0 || s.totalPulls % 50 === 0;
+    // Episode ends on bankroll exhaustion
+    const done = s.bankroll <= 0;
     s.isOver = done;
 
     return { reward: netReward, done };

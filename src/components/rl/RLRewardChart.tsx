@@ -49,7 +49,13 @@ export function RLRewardChart({ rewards, steps = [], tdErrors = [] }: Props) {
         </span>
       </CardHeader>
       <CardContent className="p-3 pt-1">
-        <RLChartSvg pathD={pathD} metric={metric} />
+        <RLChartSvg
+          pathD={pathD}
+          metric={metric}
+          minVal={minVal}
+          maxVal={maxVal}
+          totalCount={data.length}
+        />
       </CardContent>
     </Card>
   );

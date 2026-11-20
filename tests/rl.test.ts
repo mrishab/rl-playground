@@ -265,7 +265,10 @@ describe("RL Engine with Smart Obstacles", () => {
     // Action 1: Right -> steps to [0, 1] where obstacle currently is
     const res = engine.step(0, 0, 1);
     assert.equal(res.caughtByObstacle, true);
-    assert.equal(res.reward, BASE_RULES.smartObstaclePenalty);
+    assert.equal(
+      res.reward,
+      BASE_RULES.stepReward + BASE_RULES.smartObstaclePenalty,
+    );
     assert.equal(res.isTerminal, true);
   });
 
@@ -286,7 +289,10 @@ describe("RL Engine with Smart Obstacles", () => {
     // Step to [0, 1]
     const res = engine.step(0, 0, 1);
     assert.equal(res.caughtByObstacle, true);
-    assert.equal(res.reward, BASE_RULES.smartObstaclePenalty);
+    assert.equal(
+      res.reward,
+      BASE_RULES.stepReward + BASE_RULES.smartObstaclePenalty,
+    );
   });
 
   it("should successfully run episode and return valid EpisodeResult", () => {

@@ -6,6 +6,7 @@ import {
   type SmartObstacle,
   type TransitionLog,
   type QTable,
+  type QActionValues,
   type StateVisitTable,
   type GridCoordKey,
   ACTION_DELTAS,
@@ -24,6 +25,11 @@ export function parseStateKey(key: string): [number, number] {
   return [parseInt(parts[0], 10), parseInt(parts[1], 10)];
 }
 
+function formatSub(val: number): string {
+  if (val >= 0) return `- ${val.toFixed(2)}`;
+  return `+ ${Math.abs(val).toFixed(2)}`;
+}
+
 export class RLEngine {
   rules: RLEnvironmentRules;
   params: RLHyperparameters;
@@ -37,6 +43,7 @@ export class RLEngine {
   smartObstacles: SmartObstacle[];
   qTable: QTable = {};
   qTable2: QTable = {}; // For Double Q-Learning (QB)
+  mcCounts: Record<string, number> = {};
   stateVisits: StateVisitTable = {};
   lastTransition: TransitionLog | null = null;
 
@@ -208,7 +215,7 @@ export class RLEngine {
       if (isObstacleTerminal) {
         return {
           nextPos: [nextR, nextC],
-          reward: penalty,
+          reward: this.rules.stepReward + penalty,
           isTerminal: true,
           caughtByObstacle: true,
         };
@@ -216,7 +223,7 @@ export class RLEngine {
       advanceObstacles([nextR, nextC]);
       return {
         nextPos: [nextR, nextC],
-        reward: penalty,
+        reward: this.rules.stepReward + penalty,
         isTerminal: false,
         caughtByObstacle: true,
       };
@@ -224,9 +231,10 @@ export class RLEngine {
 
     const isGoal = nextR === this.goalPos[0] && nextC === this.goalPos[1];
     if (isGoal) {
+      advanceObstacles([nextR, nextC]);
       return {
         nextPos: [nextR, nextC],
-        reward: this.rules.goalReward,
+        reward: this.rules.stepReward + this.rules.goalReward,
         isTerminal: true,
         caughtByObstacle: false,
       };
@@ -242,7 +250,7 @@ export class RLEngine {
     if (caughtAfterMove) {
       return {
         nextPos: [nextR, nextC],
-        reward: penalty,
+        reward: this.rules.stepReward + penalty,
         isTerminal: isObstacleTerminal,
         caughtByObstacle: true,
       };
@@ -263,6 +271,13 @@ export class RLEngine {
       reward = this.rules.hazardPenalty;
       if (this.rules.hazardIsTerminal) {
         isTerminal = true;
+      } else if (this.rules.cliffReset) {
+        return {
+          nextPos: [...this.startPos],
+          reward,
+          isTerminal: false,
+          caughtByObstacle: false,
+        };
       }
     }
 
@@ -302,7 +317,38 @@ export class RLEngine {
       this.params.algorithm === "value-iteration" ||
       this.params.algorithm === "policy-iteration"
     ) {
-      this.runDPSweep();
+      const { delta } = this.runDPSweep();
+      let evalSteps = 0;
+      let evalReward = 0;
+      let evalPos: [number, number] = [...this.startPos];
+      let reached = false;
+      const visited = new Set<string>();
+
+      while (evalSteps < maxSteps) {
+        evalSteps++;
+        const key = stateKey(evalPos[0], evalPos[1]);
+        visited.add(key);
+        this.stateVisits[key] = (this.stateVisits[key] || 0) + 1;
+        const bestA = this.getBestAction(evalPos[0], evalPos[1]);
+        const stepRes = this.step(evalPos[0], evalPos[1], bestA);
+        evalReward += stepRes.reward;
+        evalPos = stepRes.nextPos;
+        if (evalPos[0] === this.goalPos[0] && evalPos[1] === this.goalPos[1]) {
+          reached = true;
+          break;
+        }
+        if (stepRes.isTerminal) break;
+        if (visited.has(stateKey(evalPos[0], evalPos[1]))) break;
+      }
+
+      return {
+        episode: 0,
+        totalReward: evalReward,
+        steps: evalSteps,
+        reachedGoal: reached,
+        caughtByObstacle: false,
+        tdError: delta,
+      };
     }
 
     // Monte Carlo memory: track visited (s, a, r)
@@ -353,7 +399,7 @@ export class RLEngine {
           qBefore,
           qAfter: q[action],
           targetQ,
-          formula: `Q(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × max(${maxNextQ.toFixed(2)}) - ${qBefore.toFixed(2)}]`,
+          formula: `Q(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × max(${maxNextQ.toFixed(2)}) ${formatSub(qBefore)}] = ${q[action].toFixed(2)}`,
         };
       } else if (this.params.algorithm === "sarsa") {
         const q = this.getQValues(r, c);
@@ -375,7 +421,7 @@ export class RLEngine {
           qBefore,
           qAfter: q[action],
           targetQ,
-          formula: `SARSA: Q(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q(s',${ACTION_NAMES[nextAction]}) - ${qBefore.toFixed(2)}]`,
+          formula: `SARSA: Q(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ${expectedNext.toFixed(2)} ${formatSub(qBefore)}] = ${q[action].toFixed(2)}`,
         };
       } else if (this.params.algorithm === "expected-sarsa") {
         const q = this.getQValues(r, c);
@@ -396,6 +442,17 @@ export class RLEngine {
         this.qTable[key] = q;
         sumTdError += Math.abs(td);
         tdCount++;
+
+        this.lastTransition = {
+          state: [r, c],
+          action,
+          reward,
+          nextState: [nextR, nextC],
+          qBefore,
+          qAfter: q[action],
+          targetQ,
+          formula: `Expected SARSA: Q(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ΣπQ(${expectedNext.toFixed(2)}) ${formatSub(qBefore)}] = ${q[action].toFixed(2)}`,
+        };
       } else if (this.params.algorithm === "double-q") {
         // Double Q-Learning: flip a coin to update QA or QB
         const updateA = Math.random() < 0.5;
@@ -412,11 +469,21 @@ export class RLEngine {
           this.qTable[key] = qA;
           sumTdError += Math.abs(td);
           tdCount++;
+
+          this.lastTransition = {
+            state: [r, c],
+            action,
+            reward,
+            nextState: [nextR, nextC],
+            qBefore,
+            qAfter: qA[action],
+            targetQ,
+            formula: `Double Q (Update Q₁): Q₁(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₂(s',${ACTION_NAMES[bestActionInA]})(${qBNext[bestActionInA].toFixed(2)}) ${formatSub(qBefore)}] = ${qA[action].toFixed(2)}`,
+          };
         } else {
           if (!this.qTable2[key]) this.qTable2[key] = [0, 0, 0, 0];
           const qB = this.qTable2[key];
           const qBefore = qB[action];
-          // find best action in QB
           let bestActionInB: Action = 0;
           let maxVal = -Infinity;
           for (let a = 0; a < 4; a++) {
@@ -434,6 +501,17 @@ export class RLEngine {
           this.qTable2[key] = qB;
           sumTdError += Math.abs(td);
           tdCount++;
+
+          this.lastTransition = {
+            state: [r, c],
+            action,
+            reward,
+            nextState: [nextR, nextC],
+            qBefore,
+            qAfter: qB[action],
+            targetQ,
+            formula: `Double Q (Update Q₂): Q₂(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₁(s',${ACTION_NAMES[bestActionInB]})(${qANext[bestActionInB].toFixed(2)}) ${formatSub(qBefore)}] = ${qB[action].toFixed(2)}`,
+          };
         }
       }
 
@@ -456,7 +534,6 @@ export class RLEngine {
       let G = 0;
       const visited = new Set<string>();
       const gamma = this.params.discountFactor;
-      const alpha = this.params.learningRate;
 
       for (let t = trajectory.length - 1; t >= 0; t--) {
         const stepItem = trajectory[t];
@@ -465,8 +542,23 @@ export class RLEngine {
         if (!visited.has(saKey)) {
           visited.add(saKey);
           const q = this.qTable[stepItem.stateKey] || [0, 0, 0, 0];
-          q[stepItem.action] += alpha * (G - q[stepItem.action]);
+          const qBefore = q[stepItem.action];
+          this.mcCounts[saKey] = (this.mcCounts[saKey] || 0) + 1;
+          const count = this.mcCounts[saKey];
+          const stepSize = 1.0 / count;
+          q[stepItem.action] += stepSize * (G - qBefore);
           this.qTable[stepItem.stateKey] = q;
+
+          this.lastTransition = {
+            state: parseStateKey(stepItem.stateKey),
+            action: stepItem.action,
+            reward: stepItem.reward,
+            nextState: [0, 0],
+            qBefore,
+            qAfter: q[stepItem.action],
+            targetQ: G,
+            formula: `Monte Carlo: Q(s,${ACTION_NAMES[stepItem.action]}) ← ${qBefore.toFixed(2)} + 1/${count} × [G(${G.toFixed(1)}) ${formatSub(qBefore)}] = ${q[stepItem.action].toFixed(2)}`,
+          };
         }
       }
     }
@@ -496,51 +588,90 @@ export class RLEngine {
   runDPSweep(): { delta: number; converged: boolean } {
     let maxDelta = 0;
     const gamma = this.params.discountFactor;
+    const pSlip = this.rules.slipProbability;
+
+    let sampleTransition: TransitionLog | null = null;
 
     for (let r = 0; r < this.numRows; r++) {
       for (let c = 0; c < this.numCols; c++) {
         const key = stateKey(r, c);
         if (r === this.goalPos[0] && c === this.goalPos[1]) continue;
         if (this.obstacles.has(key)) continue;
+        if (this.rules.hazardIsTerminal && this.hazards.has(key)) continue;
 
-        const currentQ = this.getQValues(r, c);
+        const currentQ = [...this.getQValues(r, c)] as QActionValues;
 
         for (let a = 0; a < 4; a++) {
           const action = a as Action;
-          const [dr, dc] = ACTION_DELTAS[action];
-          let nextR = Math.max(0, Math.min(this.numRows - 1, r + dr));
-          let nextC = Math.max(0, Math.min(this.numCols - 1, c + dc));
-          if (this.obstacles.has(stateKey(nextR, nextC))) {
-            nextR = r;
-            nextC = c;
+          const outcomes: { act: Action; prob: number }[] = [];
+          if (pSlip > 0) {
+            outcomes.push({ act: action, prob: 1 - pSlip });
+            outcomes.push({
+              act: ((action + 1) % 4) as Action,
+              prob: pSlip / 2,
+            });
+            outcomes.push({
+              act: ((action + 3) % 4) as Action,
+              prob: pSlip / 2,
+            });
+          } else {
+            outcomes.push({ act: action, prob: 1.0 });
           }
 
-          let reward = this.rules.stepReward;
-          let isTerminal = false;
-          if (nextR === this.goalPos[0] && nextC === this.goalPos[1]) {
-            reward = this.rules.goalReward;
-            isTerminal = true;
-          } else if (this.hazards.has(stateKey(nextR, nextC))) {
-            reward = this.rules.hazardPenalty;
-            if (this.rules.hazardIsTerminal) isTerminal = true;
-          } else if (this.muds.has(stateKey(nextR, nextC))) {
-            reward = this.rules.mudPenalty ?? -2;
+          let expectedValue = 0;
+          for (const out of outcomes) {
+            const [dr, dc] = ACTION_DELTAS[out.act];
+            let nextR = Math.max(0, Math.min(this.numRows - 1, r + dr));
+            let nextC = Math.max(0, Math.min(this.numCols - 1, c + dc));
+            if (this.obstacles.has(stateKey(nextR, nextC))) {
+              nextR = r;
+              nextC = c;
+            }
+
+            let reward = this.rules.stepReward;
+            let isTerminal = false;
+
+            if (nextR === this.goalPos[0] && nextC === this.goalPos[1]) {
+              reward = this.rules.stepReward + this.rules.goalReward;
+              isTerminal = true;
+            } else if (this.hazards.has(stateKey(nextR, nextC))) {
+              reward = this.rules.stepReward + this.rules.hazardPenalty;
+              if (this.rules.hazardIsTerminal) isTerminal = true;
+            } else if (this.muds.has(stateKey(nextR, nextC))) {
+              reward = this.rules.stepReward + (this.rules.mudPenalty ?? -2);
+            }
+
+            const nextQ = this.getQValues(nextR, nextC);
+            const maxNext = isTerminal ? 0 : Math.max(...nextQ);
+            expectedValue += out.prob * (reward + gamma * maxNext);
           }
 
-          const nextQ = this.getQValues(nextR, nextC);
-          const maxNext = isTerminal ? 0 : Math.max(...nextQ);
-          const backupVal = reward + gamma * maxNext;
-
-          const diff = Math.abs(currentQ[action] - backupVal);
+          const qBefore = currentQ[action];
+          const diff = Math.abs(qBefore - expectedValue);
           if (diff > maxDelta) maxDelta = diff;
 
-          currentQ[action] =
-            currentQ[action] +
-            this.params.learningRate * (backupVal - currentQ[action]);
+          currentQ[action] = expectedValue;
+
+          if (!sampleTransition || diff > 0.01) {
+            sampleTransition = {
+              state: [r, c],
+              action,
+              reward: this.rules.stepReward,
+              nextState: [r, c],
+              qBefore,
+              qAfter: expectedValue,
+              targetQ: expectedValue,
+              formula: `Value Iteration: Q((${r},${c}),${ACTION_NAMES[action]}) ← Σ P(s'|s,a)[R + γ max_{a'} Q(s',a')] = ${expectedValue.toFixed(2)} (slip: ${(pSlip * 100).toFixed(0)}%)`,
+            };
+          }
         }
 
         this.qTable[key] = currentQ;
       }
+    }
+
+    if (sampleTransition) {
+      this.lastTransition = sampleTransition;
     }
 
     return { delta: maxDelta, converged: maxDelta < 0.001 };

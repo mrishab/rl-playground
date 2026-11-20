@@ -15,6 +15,15 @@ export function AgentRenameEditor({ name, onChange, onSave, onCancel }: Props) {
       <Input
         value={name}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onSave();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+          }
+        }}
         className="h-7 text-xs"
         autoFocus
       />

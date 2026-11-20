@@ -33,12 +33,14 @@ export function RLTrainBatchButtons({
       <Button
         size="sm"
         variant={isSimulating ? "default" : "secondary"}
-        className="h-8 text-xs gap-1"
+        className="h-8 text-xs gap-1 min-w-[70px]"
         onClick={onToggleSimulate}
-        title={isSimulating ? "Pause simulation" : "Run simulation"}
+        title={
+          isSimulating ? "Pause continuous play" : "Play continuous policy"
+        }
       >
         <SimIcon className="h-3 w-3" />
-        {isSimulating ? "Pause Run" : "Start Run"}
+        {isSimulating ? "Pause" : "Play"}
       </Button>
     </div>
   );

@@ -14,7 +14,9 @@ export function IceMazeView({ state }: Props) {
   const failureNotice =
     state.isOver && !state.won
       ? state.controller === "search"
-        ? "A* Plan Failed (Slipped into Pit)"
+        ? state.failedBySlip
+          ? "A* Plan Failed (Slipped into Pit)"
+          : "A* Plan Failed (Step Limit)"
         : "Episode Over"
       : null;
 

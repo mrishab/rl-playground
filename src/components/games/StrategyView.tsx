@@ -29,12 +29,12 @@ export function StrategyView({ state }: Props) {
             cellSize={cellSize}
           />
         </svg>
-        <StrategyStatusBar
-          agentHp={state.agent.health}
-          oppHp={state.opponent.health}
-          lastActionDesc={state.lastActionDesc}
-        />
       </div>
+      <StrategyStatusBar
+        agentHp={state.agent.health}
+        oppHp={state.opponent.health}
+        lastActionDesc={state.lastActionDesc}
+      />
     </div>
   );
 }

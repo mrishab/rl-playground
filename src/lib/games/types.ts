@@ -77,7 +77,7 @@ export type PacmanState = {
 };
 
 // Chess Types
-export type ChessPieceType = "K" | "R" | "N" | "P" | "Q";
+export type ChessPieceType = "K" | "R" | "N" | "P" | "Q" | "B";
 export type ChessPieceColor = "w" | "b";
 
 export type ChessPiece = {
@@ -151,6 +151,7 @@ export type IceMazeState = {
   controller: ControllerMode;
   failedBySlip: boolean;
   visitedPath: [number, number][];
+  policyArrows?: Record<string, number>;
 };
 
 // Slot Machine Bandit Types

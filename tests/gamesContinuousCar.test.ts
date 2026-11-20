@@ -120,7 +120,7 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     engine.setController("rl");
 
     let crashed = false;
-    for (let s = 0; s < 60; s++) {
+    for (let s = 0; s < 80; s++) {
       const { done } = engine.step();
       if (done && engine.state.isCollided) {
         crashed = true;

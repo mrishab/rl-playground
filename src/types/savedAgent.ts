@@ -1,4 +1,9 @@
-import type { RLAlgorithm, QTable } from "@/lib/rl/types";
+import type {
+  RLAlgorithm,
+  QTable,
+  SmartObstacle,
+  RLEnvironmentRules,
+} from "@/lib/rl/types";
 
 export type SavedRLAgent = {
   id: string;
@@ -14,6 +19,7 @@ export type SavedRLAgent = {
   };
   metrics: {
     totalEpisodes: number;
+    successCount?: number;
     successRate: number;
     finalReward: number;
     averageSteps: number;
@@ -24,6 +30,16 @@ export type SavedRLAgent = {
     goalPos: [number, number];
     hazards: [number, number][];
     obstacles: [number, number][];
+    muds?: [number, number][];
+    ices?: [number, number][];
+    smartObstacles?: SmartObstacle[];
+    initialSmartObstacles?: SmartObstacle[];
+  };
+  rules?: RLEnvironmentRules;
+  history?: {
+    rewardHistory?: number[];
+    stepsHistory?: number[];
+    tdHistory?: number[];
   };
   qTable: QTable;
 };

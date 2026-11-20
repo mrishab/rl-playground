@@ -67,6 +67,7 @@ export type RLEnvironmentRules = {
   hazardIsTerminal: boolean;
   smartObstaclePenalty?: number;
   smartObstacleIsTerminal?: boolean;
+  cliffReset?: boolean;
 };
 
 export type RLHyperparameters = {
@@ -114,6 +115,10 @@ export type BanditArm = {
   estimatedValue: number;
   successes?: number;
   failures?: number;
+  ucbBonus?: number;
+  ucbScore?: number;
+  posteriorMean?: number;
+  posteriorStd?: number;
 };
 
 export type BanditRunConfig = {
@@ -122,6 +127,7 @@ export type BanditRunConfig = {
   epsilon: number;
   c: number; // UCB parameter
   initialQ: number;
+  alpha?: number; // Constant step-size parameter for optimistic & non-stationary
   isStationary: boolean;
   driftStdDev: number;
 };

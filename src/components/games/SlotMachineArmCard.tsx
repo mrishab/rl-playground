@@ -20,14 +20,14 @@ export function SlotMachineArmCard({ machines, lastArm }: Props) {
                 : "border-border/50 bg-card/40"
             }`}
           >
-            <div className="flex items-center justify-between gap-1 font-medium">
+            <div className="flex items-start justify-between gap-1 font-medium">
               <span className="flex items-center gap-1 min-w-0" title={m.name}>
                 <span className="shrink-0">{m.symbol}</span>
-                <span className="text-[11px] font-semibold truncate">
+                <span className="text-[11px] font-semibold leading-tight break-words">
                   {m.name}
                 </span>
               </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning font-mono font-medium shrink-0">
+              <span className="text-[10px] px-1 py-0.5 rounded bg-warning/15 text-warning font-mono font-medium shrink-0 whitespace-nowrap">
                 ${m.payout}
               </span>
             </div>

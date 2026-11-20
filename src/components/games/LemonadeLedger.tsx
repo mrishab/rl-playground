@@ -26,7 +26,7 @@ export function LemonadeLedger({ state }: Props) {
           </span>
         </div>
         <div className="flex items-center gap-1 text-success font-semibold text-sm">
-          <DollarSign className="h-3.5 w-3.5" /> ${state.cashBalance.toFixed(1)}
+          <DollarSign className="h-3.5 w-3.5" /> {state.cashBalance.toFixed(1)}
         </div>
       </div>
       <LemonadeFinancialSummary

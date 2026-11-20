@@ -81,12 +81,7 @@ export class LemonadeEngine {
       lastReward: 0,
       isOver: false,
       controller: "rl",
-      learnedPolicy: {
-        Rainy: 10,
-        Cloudy: 30,
-        Sunny: 40,
-        Heatwave: 60,
-      },
+      learnedPolicy: this.deriveLearnedPolicy(),
     };
   }
 
@@ -170,7 +165,11 @@ export class LemonadeEngine {
     const weathers: WeatherType[] = ["Rainy", "Cloudy", "Sunny", "Heatwave"];
     const policy: Partial<Record<WeatherType, number>> = {};
     for (const w of weathers) {
-      const q = this.getQValues(w);
+      const q = this.qTable.get(w);
+      if (!q) {
+        policy[w] = PREP_ACTIONS[0];
+        continue;
+      }
       let bestIdx = 0;
       let maxVal = -Infinity;
       for (let i = 0; i < q.length; i++) {
@@ -239,20 +238,22 @@ export class LemonadeEngine {
     s.isOver = done;
 
     // RL Q-update
-    const currentQ = this.getQValues(weather);
-    const nextQ = this.getQValues(nextWeather);
-    const target = done
-      ? reward
-      : reward +
-        this.hyperparams.discountFactor *
-          (this.hyperparams.algorithm === "sarsa"
-            ? nextQ[this.selectPrepActionRL(nextWeather, true)]
-            : Math.max(...nextQ));
+    if (s.controller === "rl") {
+      const currentQ = this.getQValues(weather);
+      const nextQ = this.getQValues(nextWeather);
+      const target = done
+        ? reward
+        : reward +
+          this.hyperparams.discountFactor *
+            (this.hyperparams.algorithm === "sarsa"
+              ? nextQ[this.selectPrepActionRL(nextWeather, true)]
+              : Math.max(...nextQ));
 
-    currentQ[actionIdx] +=
-      this.hyperparams.learningRate * (target - currentQ[actionIdx]);
+      currentQ[actionIdx] +=
+        this.hyperparams.learningRate * (target - currentQ[actionIdx]);
 
-    s.learnedPolicy = this.deriveLearnedPolicy();
+      s.learnedPolicy = this.deriveLearnedPolicy();
+    }
 
     return { reward, done };
   }

@@ -1,4 +1,4 @@
-import type { GameHyperparameters, PongState } from "./types";
+import type { ControllerMode, GameHyperparameters, PongState } from "./types";
 
 export class PongEngine {
   width = 240;
@@ -11,6 +11,7 @@ export class PongEngine {
   state: PongState;
   qTable: Map<string, [number, number, number]> = new Map();
   hyperparams: GameHyperparameters;
+  controller: ControllerMode = "rl";
 
   constructor(hyperparams?: Partial<GameHyperparameters>) {
     this.hyperparams = {
@@ -43,6 +44,10 @@ export class PongEngine {
     };
   }
 
+  setController(controller: ControllerMode): void {
+    this.controller = controller;
+  }
+
   resetEpisode(): void {
     const agentScore = this.state.agentScore;
     const oppScore = this.state.opponentScore;
@@ -62,8 +67,10 @@ export class PongEngine {
   }
 
   resetAll(): void {
+    const prevController = this.controller;
     this.qTable.clear();
     this.state = this.createInitialState();
+    this.controller = prevController;
   }
 
   getStateKey(state: PongState): string {
@@ -93,6 +100,14 @@ export class PongEngine {
   }
 
   selectAction(stateKey: string, explore = true): number {
+    if (this.controller === "search") {
+      const s = this.state;
+      const dy = s.ballY - (s.agentY + this.paddleH / 2);
+      if (dy < -4) return 1; // Move up
+      if (dy > 4) return 2; // Move down
+      return 0; // Stay
+    }
+
     const q = this.getQValues(stateKey);
     if (explore && Math.random() < this.hyperparams.explorationRate) {
       return Math.floor(Math.random() * 3);
@@ -211,21 +226,23 @@ export class PongEngine {
 
     s.lastReward = reward;
 
-    // RL Q-update
-    const nextStateKey = this.getStateKey(s);
-    const qCurrent = this.getQValues(stateKey);
-    const nextQ = this.getQValues(nextStateKey);
+    if (this.controller === "rl") {
+      // RL Q-update
+      const nextStateKey = this.getStateKey(s);
+      const qCurrent = this.getQValues(stateKey);
+      const nextQ = this.getQValues(nextStateKey);
 
-    const target = done
-      ? reward
-      : reward +
-        this.hyperparams.discountFactor *
-          (this.hyperparams.algorithm === "sarsa"
-            ? nextQ[this.selectAction(nextStateKey, true)]
-            : Math.max(...nextQ));
+      const target = done
+        ? reward
+        : reward +
+          this.hyperparams.discountFactor *
+            (this.hyperparams.algorithm === "sarsa"
+              ? nextQ[this.selectAction(nextStateKey, true)]
+              : Math.max(...nextQ));
 
-    qCurrent[action] +=
-      this.hyperparams.learningRate * (target - qCurrent[action]);
+      qCurrent[action] +=
+        this.hyperparams.learningRate * (target - qCurrent[action]);
+    }
 
     return { reward, done };
   }

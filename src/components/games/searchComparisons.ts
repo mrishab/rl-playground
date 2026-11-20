@@ -35,7 +35,7 @@ export const SEARCH_COMPARISONS: Record<GameId, SearchComparison> = {
     rl: "RL bootstraps board values directly from match results.",
   },
   strategy: {
-    search: "Simultaneous moves and fog explode decision tree branches.",
-    rl: "RL coordinates focus fire, flanking, and tactical retreats.",
+    search: "Greedy search targets closest nodes, ignoring tactical trades.",
+    rl: "RL learns node control value, range spacing, and retreat timing.",
   },
 };

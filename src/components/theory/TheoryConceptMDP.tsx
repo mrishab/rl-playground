@@ -24,7 +24,8 @@ export function TheoryConceptMDP() {
             <strong>P(s&apos;|s, a):</strong> Transition probability.
           </li>
           <li>
-            <strong>R(s, a, s&apos;):</strong> Scalar reward.
+            <strong>R(s, a, s&apos;):</strong> Expected scalar reward received
+            on transition (often written R(s, a) as marginal expectation).
           </li>
           <li>
             <strong>γ ∈ [0, 1):</strong> Discount factor.

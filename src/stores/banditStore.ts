@@ -19,6 +19,7 @@ export type BanditStoreState = {
 
   step: () => void;
   stepBatch: (count: number) => void;
+  pullArm: (armId: number) => void;
   setAlgorithm: (algorithm: BanditAlgorithm) => void;
   setConfig: (patch: Partial<BanditRunConfig>) => void;
   reset: () => void;
@@ -79,19 +80,42 @@ export const useBanditStore = create<BanditStoreState>((set, get) => ({
     });
   },
 
+  pullArm: (armId: number) => {
+    engine.pullArm(armId);
+    set({
+      arms: [...engine.arms],
+      stepCount: engine.stepCount,
+      cumulativeReward: engine.cumulativeReward,
+      averageReward:
+        engine.stepCount > 0 ? engine.cumulativeReward / engine.stepCount : 0,
+      optimalRate:
+        engine.stepCount > 0
+          ? (engine.optimalActionPicks / engine.stepCount) * 100
+          : 0,
+      history: [...engine.history.slice(-300)],
+    });
+  },
+
   setAlgorithm: (algorithm) => {
-    get().setConfig({ algorithm });
+    const patch: Partial<BanditRunConfig> = { algorithm };
+    if (algorithm !== "optimistic-initial") {
+      patch.initialQ = 0.0;
+    }
+    get().setConfig(patch);
   },
 
   setConfig: (patch) => {
     const current = get().config;
     const nextConfig = { ...current, ...patch };
 
+    if (nextConfig.algorithm !== "optimistic-initial") {
+      nextConfig.initialQ = 0.0;
+    }
+
     const requiresReset =
       (patch.algorithm !== undefined &&
         patch.algorithm !== current.algorithm) ||
-      (patch.numArms !== undefined && patch.numArms !== current.numArms) ||
-      (patch.initialQ !== undefined && patch.initialQ !== current.initialQ);
+      (patch.numArms !== undefined && patch.numArms !== current.numArms);
 
     if (requiresReset) {
       engine = new BanditEngine(nextConfig);
@@ -105,6 +129,17 @@ export const useBanditStore = create<BanditStoreState>((set, get) => ({
         history: [],
         isRunning: false,
       });
+    } else if (
+      patch.initialQ !== undefined &&
+      engine.stepCount === 0 &&
+      nextConfig.algorithm === "optimistic-initial"
+    ) {
+      engine.updateConfig(patch);
+      for (const a of engine.arms) {
+        a.estimatedValue = patch.initialQ;
+      }
+      engine.updateArmStats();
+      set({ config: nextConfig, arms: [...engine.arms] });
     } else {
       engine.updateConfig(patch);
       set({ config: nextConfig });
@@ -112,6 +147,9 @@ export const useBanditStore = create<BanditStoreState>((set, get) => ({
   },
 
   reset: () => {
+    if (get().config.algorithm !== "optimistic-initial") {
+      engine.config.initialQ = 0.0;
+    }
     engine.reset();
     set({
       arms: [...engine.arms],

@@ -9,18 +9,20 @@ interface Props {
 }
 
 export function RLGridCells({ store, tool }: Props) {
-  const { gridSize } = store;
+  const gridWidth = store.gridWidth ?? store.gridSize;
+  const gridHeight = store.gridHeight ?? store.gridSize;
   const lookups = getGridLookups(store);
+  const maxWidthClass = gridWidth > 8 ? "max-w-2xl" : "max-w-md";
 
   return (
     <div
       data-testid="grid-canvas-cells"
-      className="grid gap-1.5 w-full max-w-md mx-auto"
-      style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
+      className={`grid gap-1.5 w-full ${maxWidthClass} mx-auto`}
+      style={{ gridTemplateColumns: `repeat(${gridWidth}, minmax(0, 1fr))` }}
     >
-      {Array.from({ length: gridSize * gridSize }).map((_, idx) => {
-        const r = Math.floor(idx / gridSize);
-        const c = idx % gridSize;
+      {Array.from({ length: gridHeight * gridWidth }).map((_, idx) => {
+        const r = Math.floor(idx / gridWidth);
+        const c = idx % gridWidth;
         return (
           <RLGridCellItem
             key={`${r}-${c}`}

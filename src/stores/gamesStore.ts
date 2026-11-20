@@ -112,12 +112,20 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
   },
 
   setControllerMode: (controllerMode) => {
+    pong.setController(controllerMode);
+    pacman.setController(controllerMode);
+    chess.setController(controllerMode);
+    strategy.setController(controllerMode);
     iceMaze.setController(controllerMode);
     slotMachine.setController(controllerMode);
     lemonade.setController(controllerMode);
     continuousCar.setController(controllerMode);
     set({
       controllerMode,
+      pongState: { ...pong.state },
+      pacmanState: { ...pacman.state },
+      chessState: { ...chess.state },
+      strategyState: { ...strategy.state },
       iceMazeState: { ...iceMaze.state },
       slotMachineState: { ...slotMachine.state },
       lemonadeState: { ...lemonade.state },
@@ -142,6 +150,9 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
 
   setHyperparams: (patch) => {
     set((state) => {
+      const algoChanged =
+        patch.algorithm !== undefined &&
+        patch.algorithm !== state.hyperparams.algorithm;
       const next = { ...state.hyperparams, ...patch };
       pong.hyperparams = { ...next };
       pacman.hyperparams = { ...next };
@@ -151,6 +162,38 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       slotMachine.hyperparams = { ...next };
       lemonade.hyperparams = { ...next };
       continuousCar.hyperparams = { ...next };
+
+      if (algoChanged) {
+        pong.resetAll();
+        pacman.resetAll();
+        chess.resetAll();
+        strategy.resetAll();
+        iceMaze.resetAll();
+        slotMachine.resetAll();
+        lemonade.resetAll();
+        continuousCar.resetAll();
+        return {
+          hyperparams: next,
+          pongState: { ...pong.state },
+          pacmanState: { ...pacman.state },
+          chessState: { ...chess.state },
+          strategyState: { ...strategy.state },
+          iceMazeState: { ...iceMaze.state },
+          slotMachineState: { ...slotMachine.state },
+          lemonadeState: { ...lemonade.state },
+          continuousCarState: { ...continuousCar.state },
+          metrics: {
+            pong: { ...DEFAULT_METRIC },
+            pacman: { ...DEFAULT_METRIC },
+            chess: { ...DEFAULT_METRIC },
+            strategy: { ...DEFAULT_METRIC },
+            "ice-maze": { ...DEFAULT_METRIC },
+            "slot-machine": { ...DEFAULT_METRIC },
+            lemonade: { ...DEFAULT_METRIC },
+            "continuous-car": { ...DEFAULT_METRIC },
+          },
+        };
+      }
       return { hyperparams: next };
     });
   },
@@ -175,10 +218,11 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         const m = s.metrics.pong;
         const newScore = pong.state.agentScore;
         const highScore = Math.max(m.highScore, newScore);
-        const newEpisodes = done ? m.episodes + 1 : m.episodes;
-        const newWins = done && pong.state.ballX <= 0 ? m.wins + 1 : m.wins;
+        const isEpDone = done && pong.state.isOver;
+        const newEpisodes = isEpDone ? m.episodes + 1 : m.episodes;
+        const newWins = isEpDone && pong.state.ballX <= 0 ? m.wins + 1 : m.wins;
         const newLosses =
-          done && pong.state.ballX >= pong.width ? m.losses + 1 : m.losses;
+          isEpDone && pong.state.ballX >= pong.width ? m.losses + 1 : m.losses;
         const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         return {
           pongState: { ...pong.state },
@@ -204,9 +248,11 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         const m = s.metrics.pacman;
         const newScore = pacman.state.score;
         const highScore = Math.max(m.highScore, newScore);
-        const newEpisodes = done ? m.episodes + 1 : m.episodes;
-        const newWins = done && pacman.state.won ? m.wins + 1 : m.wins;
-        const newLosses = done && !pacman.state.won ? m.losses + 1 : m.losses;
+        const isEpDone = done && pacman.state.isOver;
+        const newEpisodes = isEpDone ? m.episodes + 1 : m.episodes;
+        const newWins = isEpDone && pacman.state.won ? m.wins + 1 : m.wins;
+        const newLosses =
+          isEpDone && !pacman.state.won ? m.losses + 1 : m.losses;
         const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         return {
           pacmanState: { ...pacman.state },
@@ -230,11 +276,12 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       const { reward, done } = chess.step();
       set((s) => {
         const m = s.metrics.chess;
-        const newEpisodes = done ? m.episodes + 1 : m.episodes;
+        const isEpDone = done && chess.state.isOver;
+        const newEpisodes = isEpDone ? m.episodes + 1 : m.episodes;
         const newWins =
-          done && chess.state.winner === "w" ? m.wins + 1 : m.wins;
+          isEpDone && chess.state.winner === "w" ? m.wins + 1 : m.wins;
         const newLosses =
-          done && chess.state.winner === "b" ? m.losses + 1 : m.losses;
+          isEpDone && chess.state.winner === "b" ? m.losses + 1 : m.losses;
         const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         const newScore =
           chess.state.agentCaptures.length * 15 +
@@ -264,11 +311,12 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         const m = s.metrics.strategy;
         const newScore = strategy.state.score;
         const highScore = Math.max(m.highScore, newScore);
-        const newEpisodes = done ? m.episodes + 1 : m.episodes;
+        const isEpDone = done && strategy.state.isOver;
+        const newEpisodes = isEpDone ? m.episodes + 1 : m.episodes;
         const newWins =
-          done && strategy.state.winner === "agent" ? m.wins + 1 : m.wins;
+          isEpDone && strategy.state.winner === "agent" ? m.wins + 1 : m.wins;
         const newLosses =
-          done && strategy.state.winner === "opponent"
+          isEpDone && strategy.state.winner === "opponent"
             ? m.losses + 1
             : m.losses;
         const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
@@ -294,9 +342,11 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       const { reward, done } = iceMaze.step();
       set((s) => {
         const m = s.metrics["ice-maze"];
-        const newEpisodes = done ? m.episodes + 1 : m.episodes;
-        const newWins = done && iceMaze.state.won ? m.wins + 1 : m.wins;
-        const newLosses = done && !iceMaze.state.won ? m.losses + 1 : m.losses;
+        const isEpDone = done && iceMaze.state.isOver;
+        const newEpisodes = isEpDone ? m.episodes + 1 : m.episodes;
+        const newWins = isEpDone && iceMaze.state.won ? m.wins + 1 : m.wins;
+        const newLosses =
+          isEpDone && !iceMaze.state.won ? m.losses + 1 : m.losses;
         const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         const newScore = iceMaze.state.won ? 100 : 0;
         return {
@@ -321,9 +371,10 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       const { reward } = slotMachine.step();
       set((s) => {
         const m = s.metrics["slot-machine"];
-        const newEpisodes = m.episodes + 1;
-        const newWins = reward > 0 ? m.wins + 1 : m.wins;
-        const newLosses = reward <= 0 ? m.losses + 1 : m.losses;
+        const isPull = slotMachine.state.totalPulls > m.episodes;
+        const newEpisodes = isPull ? slotMachine.state.totalPulls : m.episodes;
+        const newWins = isPull && reward > 0 ? m.wins + 1 : m.wins;
+        const newLosses = isPull && reward <= 0 ? m.losses + 1 : m.losses;
         const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         const newScore = Math.round(slotMachine.state.bankroll);
         return {
@@ -348,10 +399,11 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       const { reward, done } = lemonade.step();
       set((s) => {
         const m = s.metrics.lemonade;
-        const newEpisodes = done ? m.episodes + 1 : m.episodes;
+        const isEpDone = done && lemonade.state.isOver;
+        const newEpisodes = isEpDone ? m.episodes + 1 : m.episodes;
         const won = lemonade.state.cashBalance > 150;
-        const newWins = done && won ? m.wins + 1 : m.wins;
-        const newLosses = done && !won ? m.losses + 1 : m.losses;
+        const newWins = isEpDone && won ? m.wins + 1 : m.wins;
+        const newLosses = isEpDone && !won ? m.losses + 1 : m.losses;
         const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         const newScore = Math.round(lemonade.state.cashBalance);
         return {
@@ -376,13 +428,14 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       const { reward, done } = continuousCar.step();
       set((s) => {
         const m = s.metrics["continuous-car"];
-        const newEpisodes = done ? m.episodes + 1 : m.episodes;
+        const isEpDone = done && continuousCar.state.isOver;
+        const newEpisodes = isEpDone ? m.episodes + 1 : m.episodes;
         const won =
           !continuousCar.state.isCollided &&
           continuousCar.state.lapCount > 0 &&
           continuousCar.state.racePosition === 1;
-        const newWins = done && won ? m.wins + 1 : m.wins;
-        const newLosses = done && !won ? m.losses + 1 : m.losses;
+        const newWins = isEpDone && won ? m.wins + 1 : m.wins;
+        const newLosses = isEpDone && !won ? m.losses + 1 : m.losses;
         const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
         const newScore = continuousCar.state.lapCount * 50;
         return {
@@ -407,6 +460,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
   },
 
   trainBatch: (episodes) => {
+    if (get().controllerMode === "search") return;
     const { activeGame } = get();
     if (activeGame === "pong") {
       const res = pong.trainBatch(episodes);

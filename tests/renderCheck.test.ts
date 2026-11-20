@@ -18,7 +18,7 @@ describe("Application State & Action Workflows with Zero Errors", () => {
     try {
       // Test presets
       useRLStore.getState().loadPreset("cliff");
-      assert.equal(useRLStore.getState().hazards.length, 3);
+      assert.equal(useRLStore.getState().hazards.length, 10);
 
       useRLStore.getState().loadPreset("frozen-lake");
       assert.ok(useRLStore.getState().ices.length > 0);

@@ -47,7 +47,12 @@ export function BanditsPage() {
             optimalArm={store.arms[optimalIdx]}
           />
         </div>
-        <BanditTestbedCard arms={store.arms} optimalIdx={optimalIdx} />
+        <BanditTestbedCard
+          arms={store.arms}
+          optimalIdx={optimalIdx}
+          algorithm={store.config.algorithm}
+          onPull={store.pullArm}
+        />
         <BanditChartCard history={store.history} />
       </div>
     </PageLayout>

@@ -24,6 +24,8 @@ export type RLPresetName =
 
 export type RLStoreState = {
   gridSize: number;
+  gridWidth?: number;
+  gridHeight?: number;
   startPos: [number, number];
   agentPos: [number, number];
   goalPos: [number, number];
@@ -138,6 +140,7 @@ function buildEngine(state: {
   goalPos: [number, number];
   hazards: [number, number][];
   obstacles: [number, number][];
+  agentPos?: [number, number];
   smartObstacles: SmartObstacle[];
   muds?: [number, number][];
   ices?: [number, number][];
@@ -183,10 +186,15 @@ export const useRLStore = create<RLStoreState>((set, get) => {
     [4, 4],
     DEFAULT_OBSTACLES,
     DEFAULT_SMART_OBSTACLES,
+    DEFAULT_HAZARDS,
+    5,
+    5,
   );
 
   return {
     gridSize: 5,
+    gridWidth: 5,
+    gridHeight: 5,
     startPos: [0, 0],
     agentPos: [0, 0],
     goalPos: [4, 4],
@@ -231,17 +239,27 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         .filter((o) => o.r < clamped && o.c < clamped)
         .map((o) => ({ ...o }));
 
-      const newRules = { ...s.rules, gridSize: clamped };
+      const newRules = {
+        ...s.rules,
+        gridSize: clamped,
+        gridWidth: clamped,
+        gridHeight: clamped,
+      };
       const bfsResult = simulateBFSAgainstObstacles(
         clamped,
         [0, 0],
         newGoal,
         newObs,
         newSmart,
+        newHazards,
+        clamped,
+        clamped,
       );
 
       set({
         gridSize: clamped,
+        gridWidth: clamped,
+        gridHeight: clamped,
         startPos: [0, 0],
         agentPos: [0, 0],
         goalPos: newGoal,
@@ -261,7 +279,23 @@ export const useRLStore = create<RLStoreState>((set, get) => {
     setRules: (rulesPatch) => {
       set((s) => {
         const nextRules = { ...s.rules, ...rulesPatch };
-        return { rules: nextRules };
+        const freshEngine = new RLEngine(
+          nextRules,
+          s.params,
+          s.startPos,
+          s.goalPos,
+          s.hazards,
+          s.obstacles,
+          s.smartObstacles,
+          s.muds,
+          s.ices,
+        );
+        return {
+          rules: nextRules,
+          qTable: freshEngine.qTable,
+          stateVisits: {},
+          lastTransition: null,
+        };
       });
     },
 
@@ -272,7 +306,29 @@ export const useRLStore = create<RLStoreState>((set, get) => {
       });
     },
 
-    setActiveStrategy: (strategy) => set({ activeStrategy: strategy }),
+    setActiveStrategy: (strategy) => {
+      set((s) => {
+        const updateList = (list: SmartObstacle[]) =>
+          list.map((o) => ({ ...o, strategy }));
+        const updatedInitial = updateList(s.initialSmartObstacles);
+        const bfsResult = simulateBFSAgainstObstacles(
+          s.gridSize,
+          s.startPos,
+          s.goalPos,
+          s.obstacles,
+          updatedInitial,
+          s.hazards,
+          s.gridWidth,
+          s.gridHeight,
+        );
+        return {
+          activeStrategy: strategy,
+          initialSmartObstacles: updatedInitial,
+          smartObstacles: updateList(s.smartObstacles),
+          bfsResult,
+        };
+      });
+    },
 
     updateObstacleStrategy: (id, strategy) => {
       set((s) => {
@@ -285,6 +341,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           s.goalPos,
           s.obstacles,
           updatedInitial,
+          s.hazards,
+          s.gridWidth,
+          s.gridHeight,
         );
         return {
           initialSmartObstacles: updatedInitial,
@@ -305,6 +364,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           s.goalPos,
           s.obstacles,
           updatedInitial,
+          s.hazards,
+          s.gridWidth,
+          s.gridHeight,
         );
         return {
           initialSmartObstacles: updatedInitial,
@@ -318,26 +380,34 @@ export const useRLStore = create<RLStoreState>((set, get) => {
       const s = get();
       if (tool === "agent") {
         if (r === s.goalPos[0] && c === s.goalPos[1]) return;
+        const nextHazards = s.hazards.filter(
+          ([hr, hc]) => !(hr === r && hc === c),
+        );
+        const nextObs = s.obstacles.filter(
+          ([or, oc]) => !(or === r && oc === c),
+        );
+        const nextInitial = s.initialSmartObstacles.filter(
+          (o) => !(o.r === r && o.c === c),
+        );
         const bfsResult = simulateBFSAgainstObstacles(
           s.gridSize,
           [r, c],
           s.goalPos,
-          s.obstacles,
-          s.initialSmartObstacles,
+          nextObs,
+          nextInitial,
+          nextHazards,
+          s.gridWidth,
+          s.gridHeight,
         );
         set({
           startPos: [r, c],
           agentPos: [r, c],
-          hazards: s.hazards.filter(([hr, hc]) => !(hr === r && hc === c)),
-          obstacles: s.obstacles.filter(([or, oc]) => !(or === r && oc === c)),
+          hazards: nextHazards,
+          obstacles: nextObs,
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
-          smartObstacles: s.smartObstacles.filter(
-            (o) => !(o.r === r && o.c === c),
-          ),
-          initialSmartObstacles: s.initialSmartObstacles.filter(
-            (o) => !(o.r === r && o.c === c),
-          ),
+          smartObstacles: nextInitial.map((o) => ({ ...o })),
+          initialSmartObstacles: nextInitial,
           bfsResult,
         });
         return;
@@ -345,25 +415,33 @@ export const useRLStore = create<RLStoreState>((set, get) => {
 
       if (tool === "goal") {
         if (r === s.startPos[0] && c === s.startPos[1]) return;
+        const nextHazards = s.hazards.filter(
+          ([hr, hc]) => !(hr === r && hc === c),
+        );
+        const nextObs = s.obstacles.filter(
+          ([or, oc]) => !(or === r && oc === c),
+        );
+        const nextInitial = s.initialSmartObstacles.filter(
+          (o) => !(o.r === r && o.c === c),
+        );
         const bfsResult = simulateBFSAgainstObstacles(
           s.gridSize,
           s.startPos,
           [r, c],
-          s.obstacles,
-          s.initialSmartObstacles,
+          nextObs,
+          nextInitial,
+          nextHazards,
+          s.gridWidth,
+          s.gridHeight,
         );
         set({
           goalPos: [r, c],
-          hazards: s.hazards.filter(([hr, hc]) => !(hr === r && hc === c)),
-          obstacles: s.obstacles.filter(([or, oc]) => !(or === r && oc === c)),
+          hazards: nextHazards,
+          obstacles: nextObs,
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
-          smartObstacles: s.smartObstacles.filter(
-            (o) => !(o.r === r && o.c === c),
-          ),
-          initialSmartObstacles: s.initialSmartObstacles.filter(
-            (o) => !(o.r === r && o.c === c),
-          ),
+          smartObstacles: nextInitial.map((o) => ({ ...o })),
+          initialSmartObstacles: nextInitial,
           bfsResult,
         });
         return;
@@ -406,19 +484,28 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           nextInitial = [...s.initialSmartObstacles, newObs];
         }
 
+        const nextHazards = s.hazards.filter(
+          ([hr, hc]) => !(hr === r && hc === c),
+        );
+        const nextObs = s.obstacles.filter(
+          ([or, oc]) => !(or === r && oc === c),
+        );
         const bfsResult = simulateBFSAgainstObstacles(
           s.gridSize,
           s.startPos,
           s.goalPos,
-          s.obstacles,
+          nextObs,
           nextInitial,
+          nextHazards,
+          s.gridWidth,
+          s.gridHeight,
         );
 
         set({
           initialSmartObstacles: nextInitial,
           smartObstacles: nextInitial.map((o) => ({ ...o })),
-          hazards: s.hazards.filter(([hr, hc]) => !(hr === r && hc === c)),
-          obstacles: s.obstacles.filter(([or, oc]) => !(or === r && oc === c)),
+          hazards: nextHazards,
+          obstacles: nextObs,
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
           bfsResult,
@@ -433,15 +520,21 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         const nextObs = s.obstacles.filter(
           ([or, oc]) => !(or === r && oc === c),
         );
+        const nextHazards = s.hazards.filter(
+          ([hr, hc]) => !(hr === r && hc === c),
+        );
         const bfsResult = simulateBFSAgainstObstacles(
           s.gridSize,
           s.startPos,
           s.goalPos,
           nextObs,
           nextInitial,
+          nextHazards,
+          s.gridWidth,
+          s.gridHeight,
         );
         set({
-          hazards: s.hazards.filter(([hr, hc]) => !(hr === r && hc === c)),
+          hazards: nextHazards,
           obstacles: nextObs,
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
@@ -454,19 +547,33 @@ export const useRLStore = create<RLStoreState>((set, get) => {
 
       if (tool === "hazard") {
         const exists = s.hazards.some(([hr, hc]) => hr === r && hc === c);
+        const nextHazards: [number, number][] = exists
+          ? s.hazards.filter(([hr, hc]) => !(hr === r && hc === c))
+          : [...s.hazards, [r, c]];
+        const nextObs = s.obstacles.filter(
+          ([or, oc]) => !(or === r && oc === c),
+        );
+        const nextInitial = s.initialSmartObstacles.filter(
+          (o) => !(o.r === r && o.c === c),
+        );
+        const bfsResult = simulateBFSAgainstObstacles(
+          s.gridSize,
+          s.startPos,
+          s.goalPos,
+          nextObs,
+          nextInitial,
+          nextHazards,
+          s.gridWidth,
+          s.gridHeight,
+        );
         set({
-          hazards: exists
-            ? s.hazards.filter(([hr, hc]) => !(hr === r && hc === c))
-            : [...s.hazards, [r, c]],
-          obstacles: s.obstacles.filter(([or, oc]) => !(or === r && oc === c)),
+          hazards: nextHazards,
+          obstacles: nextObs,
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
-          smartObstacles: s.smartObstacles.filter(
-            (o) => !(o.r === r && o.c === c),
-          ),
-          initialSmartObstacles: s.initialSmartObstacles.filter(
-            (o) => !(o.r === r && o.c === c),
-          ),
+          smartObstacles: nextInitial.map((o) => ({ ...o })),
+          initialSmartObstacles: nextInitial,
+          bfsResult,
         });
         return;
       }
@@ -502,12 +609,21 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         const nextObs: [number, number][] = exists
           ? s.obstacles.filter(([or, oc]) => !(or === r && oc === c))
           : [...s.obstacles, [r, c]];
+        const nextHazards = s.hazards.filter(
+          ([hr, hc]) => !(hr === r && hc === c),
+        );
+        const nextInitial = s.initialSmartObstacles.filter(
+          (o) => !(o.r === r && o.c === c),
+        );
         const bfsResult = simulateBFSAgainstObstacles(
           s.gridSize,
           s.startPos,
           s.goalPos,
           nextObs,
-          s.initialSmartObstacles,
+          nextInitial,
+          nextHazards,
+          s.gridWidth,
+          s.gridHeight,
         );
         set({
           obstacles: nextObs,
@@ -574,20 +690,112 @@ export const useRLStore = create<RLStoreState>((set, get) => {
       }
 
       const engine = buildEngine(s);
+      const algo = s.params.algorithm;
+
+      if (algo === "value-iteration") {
+        engine.runDPSweep();
+        const bestAction = engine.getBestAction(r, c);
+        const { nextPos } = engine.step(r, c, bestAction);
+        const updatedVisits = {
+          ...s.stateVisits,
+          [stateKey(r, c)]: (s.stateVisits[stateKey(r, c)] || 0) + 1,
+        };
+        set({
+          agentPos: nextPos,
+          smartObstacles: engine.smartObstacles,
+          qTable: engine.qTable,
+          stateVisits: updatedVisits,
+          lastTransition: engine.lastTransition,
+        });
+        return;
+      }
+
+      if (algo === "monte-carlo") {
+        const bestAction = engine.chooseAction(r, c);
+        const stepRes = engine.step(r, c, bestAction);
+        const { nextPos, reward, isTerminal } = stepRes;
+        const q = engine.getQValues(r, c);
+        const qVal = q[bestAction];
+        const updatedVisits = {
+          ...s.stateVisits,
+          [stateKey(r, c)]: (s.stateVisits[stateKey(r, c)] || 0) + 1,
+        };
+        const actionNames = ["Up", "Right", "Down", "Left"];
+        set({
+          agentPos: nextPos,
+          smartObstacles: engine.smartObstacles,
+          stateVisits: updatedVisits,
+          lastTransition: {
+            state: [r, c],
+            action: bestAction,
+            reward,
+            nextState: nextPos,
+            qBefore: qVal,
+            qAfter: qVal,
+            targetQ: reward,
+            formula: `Monte Carlo Transition: S=(${r},${c}), A=${actionNames[bestAction]}, R=${reward.toFixed(1)}${isTerminal ? " (Terminal - Full Episode Return G_t Evaluated)" : " (Awaiting Episode Return G_t)"}`,
+          },
+        });
+        return;
+      }
+
       const bestAction = engine.chooseAction(r, c);
       const stepRes = engine.step(r, c, bestAction);
       const { nextPos, reward, isTerminal } = stepRes;
-
       const alpha = s.params.learningRate;
       const gamma = s.params.discountFactor;
       const q = engine.getQValues(r, c);
       const qBefore = q[bestAction];
-      const nextQ = engine.getQValues(nextPos[0], nextPos[1]);
-      const maxNextQ = isTerminal ? 0 : Math.max(...nextQ);
-      const targetQ = reward + gamma * maxNextQ;
-      q[bestAction] += alpha * (targetQ - qBefore);
-      engine.qTable[stateKey(r, c)] = q;
+      const actionNames = ["Up", "Right", "Down", "Left"];
+      const actionName = actionNames[bestAction] ?? "Action";
 
+      let targetQ = reward;
+      let formula = "";
+      const subStr =
+        qBefore >= 0
+          ? `- ${qBefore.toFixed(2)}`
+          : `+ ${Math.abs(qBefore).toFixed(2)}`;
+
+      if (algo === "q-learning") {
+        const nextQ = engine.getQValues(nextPos[0], nextPos[1]);
+        const maxNextQ = isTerminal ? 0 : Math.max(...nextQ);
+        targetQ = reward + gamma * maxNextQ;
+        const td = targetQ - qBefore;
+        q[bestAction] += alpha * td;
+        formula = `Q(s,${actionName}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × max(${maxNextQ.toFixed(2)}) ${subStr}] = ${q[bestAction].toFixed(2)}`;
+      } else if (algo === "sarsa") {
+        const nextAction = engine.chooseAction(nextPos[0], nextPos[1]);
+        const nextQ = engine.getQValues(nextPos[0], nextPos[1]);
+        const nextVal = isTerminal ? 0 : nextQ[nextAction];
+        targetQ = reward + gamma * nextVal;
+        const td = targetQ - qBefore;
+        q[bestAction] += alpha * td;
+        formula = `SARSA: Q(s,${actionName}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ${nextVal.toFixed(2)} ${subStr}] = ${q[bestAction].toFixed(2)}`;
+      } else if (algo === "expected-sarsa") {
+        const nextQ = engine.getQValues(nextPos[0], nextPos[1]);
+        let expectedNext = 0;
+        if (!isTerminal) {
+          const eps = s.params.explorationRate;
+          const bestA = engine.getBestAction(nextPos[0], nextPos[1]);
+          for (let a = 0; a < 4; a++) {
+            const prob = a === bestA ? 1 - eps + eps / 4 : eps / 4;
+            expectedNext += prob * nextQ[a];
+          }
+        }
+        targetQ = reward + gamma * expectedNext;
+        const td = targetQ - qBefore;
+        q[bestAction] += alpha * td;
+        formula = `Expected SARSA: Q(s,${actionName}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ΣπQ(${expectedNext.toFixed(2)}) ${subStr}] = ${q[bestAction].toFixed(2)}`;
+      } else if (algo === "double-q") {
+        const nextQ = engine.getQValues(nextPos[0], nextPos[1]);
+        const maxNextQ = isTerminal ? 0 : Math.max(...nextQ);
+        targetQ = reward + gamma * maxNextQ;
+        const td = targetQ - qBefore;
+        q[bestAction] += alpha * td;
+        formula = `Double Q (Update Q₁): Q₁(s,${actionName}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₂(s',a*)(${maxNextQ.toFixed(2)}) ${subStr}] = ${q[bestAction].toFixed(2)}`;
+      }
+
+      engine.qTable[stateKey(r, c)] = q;
       const updatedVisits = {
         ...s.stateVisits,
         [stateKey(r, c)]: (s.stateVisits[stateKey(r, c)] || 0) + 1,
@@ -606,14 +814,14 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           qBefore,
           qAfter: q[bestAction],
           targetQ,
-          formula: `Q(s,a) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ${maxNextQ.toFixed(2)} - ${qBefore.toFixed(2)}] = ${q[bestAction].toFixed(2)}`,
+          formula,
         },
       });
     },
 
     stepSimulation: () => {
       const s = get();
-      const [r, c] = s.agentPos;
+      let [r, c] = s.agentPos;
       const isAtGoal = r === s.goalPos[0] && c === s.goalPos[1];
       const isAtTerminalHazard =
         s.rules.hazardIsTerminal &&
@@ -622,17 +830,23 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         (s.rules.smartObstacleIsTerminal ?? true) &&
         s.smartObstacles.some((o) => o.r === r && o.c === c);
 
+      let obstacles = s.smartObstacles;
       if (isAtGoal || isAtTerminalHazard || isAtTerminalObs) {
-        set({
-          agentPos: [...s.startPos],
-          smartObstacles: s.initialSmartObstacles.map((o) => ({ ...o })),
-        });
-        return;
+        r = s.startPos[0];
+        c = s.startPos[1];
+        obstacles = s.initialSmartObstacles.map((o) => ({ ...o }));
       }
 
-      const engine = buildEngine(s);
-      const bestAction = engine.getBestAction(r, c);
-      const { nextPos } = engine.step(r, c, bestAction);
+      const engine = buildEngine({
+        ...s,
+        agentPos: [r, c],
+        smartObstacles: obstacles,
+      });
+      const action =
+        s.params.explorationRate > 0
+          ? engine.chooseAction(r, c)
+          : engine.getBestAction(r, c);
+      const { nextPos } = engine.step(r, c, action);
       set({
         agentPos: nextPos,
         smartObstacles: engine.smartObstacles,
@@ -687,29 +901,53 @@ export const useRLStore = create<RLStoreState>((set, get) => {
     },
 
     resetEnvironment: () => {
-      const g = get().gridSize;
+      const g = 5;
+      const initialSmart = DEFAULT_SMART_OBSTACLES.map((o) => ({ ...o }));
       const bfsResult = simulateBFSAgainstObstacles(
         g,
         [0, 0],
-        [g - 1, g - 1],
-        [],
-        [],
+        [4, 4],
+        DEFAULT_OBSTACLES,
+        initialSmart,
+        DEFAULT_HAZARDS,
+        5,
+        5,
+      );
+      const freshEngine = new RLEngine(
+        DEFAULT_RULES,
+        DEFAULT_PARAMS,
+        [0, 0],
+        [4, 4],
+        DEFAULT_HAZARDS,
+        DEFAULT_OBSTACLES,
+        initialSmart,
       );
       set({
-        hazards: [],
-        obstacles: [],
+        gridSize: 5,
+        gridWidth: 5,
+        gridHeight: 5,
+        hazards: DEFAULT_HAZARDS.map(([r, c]) => [r, c]),
+        obstacles: DEFAULT_OBSTACLES.map(([r, c]) => [r, c]),
         muds: [],
         ices: [],
-        smartObstacles: [],
-        initialSmartObstacles: [],
+        smartObstacles: initialSmart.map((o) => ({ ...o })),
+        initialSmartObstacles: initialSmart.map((o) => ({ ...o })),
         startPos: [0, 0],
         agentPos: [0, 0],
-        goalPos: [g - 1, g - 1],
+        goalPos: [4, 4],
+        rules: DEFAULT_RULES,
         bfsResult,
         isSimulating: false,
         inspectedCell: null,
+        qTable: freshEngine.qTable,
+        stateVisits: {},
+        totalEpisodes: 0,
+        rewardHistory: [],
+        stepsHistory: [],
+        tdHistory: [],
+        successCount: 0,
+        lastTransition: null,
       });
-      get().resetQTable();
     },
 
     loadPreset: (name) => {
@@ -724,26 +962,37 @@ export const useRLStore = create<RLStoreState>((set, get) => {
       let rules = { ...get().rules };
 
       if (name === "cliff") {
-        size = 5;
-        startPos = [4, 0];
-        goalPos = [4, 4];
+        size = 4;
+        startPos = [3, 0];
+        goalPos = [3, 11];
         hazards = [
-          [4, 1],
-          [4, 2],
-          [4, 3],
+          [3, 1],
+          [3, 2],
+          [3, 3],
+          [3, 4],
+          [3, 5],
+          [3, 6],
+          [3, 7],
+          [3, 8],
+          [3, 9],
+          [3, 10],
         ];
         rules = {
           ...rules,
-          gridSize: 5,
+          gridSize: 4,
+          gridWidth: 12,
+          gridHeight: 4,
+          goalReward: 0,
           hazardPenalty: -100,
           stepReward: -1,
-          hazardIsTerminal: true,
+          hazardIsTerminal: false,
+          cliffReset: true,
           slipProbability: 0,
         };
       } else if (name === "frozen-lake") {
-        size = 5;
+        size = 4;
         startPos = [0, 0];
-        goalPos = [4, 4];
+        goalPos = [3, 3];
         hazards = [
           [1, 1],
           [1, 3],
@@ -754,7 +1003,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           [0, 1],
           [0, 2],
           [0, 3],
+          [1, 0],
           [1, 2],
+          [2, 0],
           [2, 1],
           [2, 2],
           [3, 1],
@@ -762,10 +1013,12 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         ];
         rules = {
           ...rules,
-          gridSize: 5,
-          hazardPenalty: -50,
-          stepReward: -0.1,
-          goalReward: 100,
+          gridSize: 4,
+          gridWidth: 4,
+          gridHeight: 4,
+          hazardPenalty: 0,
+          stepReward: 0,
+          goalReward: 1,
           hazardIsTerminal: true,
           slipProbability: 0.25,
         };
@@ -786,6 +1039,8 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         rules = {
           ...rules,
           gridSize: 5,
+          gridWidth: 5,
+          gridHeight: 5,
           stepReward: -0.5,
           goalReward: 50,
           hazardPenalty: -20,
@@ -807,6 +1062,8 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         rules = {
           ...rules,
           gridSize: 5,
+          gridWidth: 5,
+          gridHeight: 5,
           hazardPenalty: -40,
           stepReward: -1,
           hazardIsTerminal: false,
@@ -843,6 +1100,8 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         rules = {
           ...DEFAULT_RULES,
           gridSize: 5,
+          gridWidth: 5,
+          gridHeight: 5,
           smartObstaclePenalty: -40,
           smartObstacleIsTerminal: false,
         };
@@ -851,27 +1110,40 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         hazards = DEFAULT_HAZARDS;
         obstacles = DEFAULT_OBSTACLES;
         smartObs = DEFAULT_SMART_OBSTACLES.map((o) => ({ ...o }));
-        rules = DEFAULT_RULES;
+        rules = {
+          ...DEFAULT_RULES,
+          gridWidth: 5,
+          gridHeight: 5,
+        };
       } else {
         size = 5;
         rules = {
           ...DEFAULT_RULES,
           gridSize: 5,
+          gridWidth: 5,
+          gridHeight: 5,
           slipProbability: 0,
           hazardIsTerminal: false,
         };
       }
 
+      const gridWidth = rules.gridWidth ?? size;
+      const gridHeight = rules.gridHeight ?? size;
       const bfsResult = simulateBFSAgainstObstacles(
         size,
         startPos,
         goalPos,
         obstacles,
         smartObs,
+        hazards,
+        gridWidth,
+        gridHeight,
       );
 
       set({
         gridSize: size,
+        gridWidth,
+        gridHeight,
         startPos,
         agentPos: [...startPos],
         goalPos,

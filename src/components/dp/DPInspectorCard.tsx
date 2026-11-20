@@ -19,16 +19,24 @@ export function DPInspectorCard({ inspected }: Props) {
         <div className="bg-muted/30 border rounded p-2 text-xs font-mono">
           {inspected.formula}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-          {([0, 1, 2, 3] as Action[]).map((act) => (
-            <DPActionValueTile
-              key={act}
-              act={act}
-              actionData={inspected.actionValues[act]}
-              isBest={act === inspected.bestAction}
-            />
-          ))}
-        </div>
+        {Object.values(inspected.actionValues).every(
+          (a) => a.transitions.length === 0,
+        ) ? (
+          <div className="text-xs text-muted-foreground italic p-3 bg-muted/20 rounded border">
+            Terminal absorbing state: no actions can be taken from this cell.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            {([0, 1, 2, 3] as Action[]).map((act) => (
+              <DPActionValueTile
+                key={act}
+                act={act}
+                actionData={inspected.actionValues[act]}
+                isBest={act === inspected.bestAction}
+              />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

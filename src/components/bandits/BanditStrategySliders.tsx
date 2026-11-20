@@ -42,6 +42,17 @@ export function BanditStrategySliders({ config, onUpdate }: Props) {
           onChange={(initialQ) => onUpdate({ initialQ })}
         />
       )}
+      {(config.algorithm === "optimistic-initial" || !config.isStationary) && (
+        <BanditParamSlider
+          label="Constant Step-Size (α)"
+          value={config.alpha ?? 0.1}
+          min={0.01}
+          max={0.5}
+          step={0.01}
+          precision={2}
+          onChange={(alpha) => onUpdate({ alpha })}
+        />
+      )}
       <div className="flex items-center justify-between border-t pt-3">
         <Label htmlFor="stationary-switch" className="text-xs font-medium">
           Stationary Bandit

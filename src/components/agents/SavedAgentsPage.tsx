@@ -36,7 +36,25 @@ export function SavedAgentsPage() {
           hasAgents={agents.length > 0}
         />
         {filteredAgents.length === 0 ? (
-          <AgentsEmptyState onGoToGridWorld={() => navigate("/gridworld")} />
+          searchQuery.trim().length > 0 ? (
+            <div className="border border-dashed rounded-lg p-8 text-center space-y-2">
+              <p className="text-sm font-semibold">
+                No saved agents found matching &ldquo;{searchQuery}&rdquo;
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Try a different name or algorithm filter.
+              </p>
+              <button
+                type="button"
+                className="text-xs text-primary underline font-medium hover:opacity-80 pt-1"
+                onClick={() => setSearchQuery("")}
+              >
+                Clear Search
+              </button>
+            </div>
+          ) : (
+            <AgentsEmptyState onGoToGridWorld={() => navigate("/gridworld")} />
+          )
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filteredAgents.map((agent) => (

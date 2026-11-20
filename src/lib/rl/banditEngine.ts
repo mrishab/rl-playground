@@ -50,10 +50,30 @@ export class BanditEngine {
         estimatedValue:
           this.config.algorithm === "optimistic-initial"
             ? this.config.initialQ || 5.0
-            : this.config.initialQ || 0.0,
+            : 0.0,
         successes: 1,
         failures: 1,
       });
+    }
+    this.updateArmStats();
+  }
+
+  updateArmStats(): void {
+    const totalPulls = Math.max(1, this.stepCount);
+    const c = this.config.c;
+    for (const arm of this.arms) {
+      if (arm.pulls === 0) {
+        arm.ucbBonus = Infinity;
+        arm.ucbScore = Infinity;
+        arm.posteriorMean = arm.estimatedValue;
+        arm.posteriorStd = 1.0;
+      } else {
+        const bonus = c * Math.sqrt(Math.log(totalPulls) / arm.pulls);
+        arm.ucbBonus = bonus;
+        arm.ucbScore = arm.estimatedValue + bonus;
+        arm.posteriorMean = arm.estimatedValue;
+        arm.posteriorStd = 1.0 / Math.sqrt(arm.pulls);
+      }
     }
   }
 
@@ -74,14 +94,17 @@ export class BanditEngine {
 
     if (algorithm === "pure-greedy") {
       let maxQ = -Infinity;
-      let best = 0;
+      let candidates: number[] = [];
       for (let i = 0; i < this.arms.length; i++) {
-        if (this.arms[i].estimatedValue > maxQ) {
-          maxQ = this.arms[i].estimatedValue;
-          best = i;
+        const val = this.arms[i].estimatedValue;
+        if (val > maxQ) {
+          maxQ = val;
+          candidates = [i];
+        } else if (Math.abs(val - maxQ) < 1e-6) {
+          candidates.push(i);
         }
       }
-      return best;
+      return candidates[Math.floor(Math.random() * candidates.length)];
     }
 
     if (algorithm === "epsilon-greedy" || algorithm === "optimistic-initial") {
@@ -104,11 +127,12 @@ export class BanditEngine {
     }
 
     if (algorithm === "ucb1") {
-      // Arms never pulled get infinite priority
-      for (let i = 0; i < this.arms.length; i++) {
-        if (this.arms[i].pulls === 0) return i;
+      // Arms never pulled get infinite priority, broken uniformly at random
+      const unpulled = this.arms.filter((a) => a.pulls === 0);
+      if (unpulled.length > 0) {
+        return unpulled[Math.floor(Math.random() * unpulled.length)].id;
       }
-      const totalPulls = this.stepCount;
+      const totalPulls = Math.max(1, this.stepCount);
       let maxUpper = -Infinity;
       let best = 0;
       for (let i = 0; i < this.arms.length; i++) {
@@ -143,8 +167,12 @@ export class BanditEngine {
   }
 
   step(): BanditStepResult {
-    this.stepCount++;
     const chosenArmIdx = this.selectArm();
+    return this.pullArm(chosenArmIdx);
+  }
+
+  pullArm(chosenArmIdx: number): BanditStepResult {
+    this.stepCount++;
     const arm = this.arms[chosenArmIdx];
 
     // Sample reward from arm distribution
@@ -155,9 +183,15 @@ export class BanditEngine {
     const isOptimal = chosenArmIdx === optimalArmIdx;
     if (isOptimal) this.optimalActionPicks++;
 
-    // Incremental update: Q_{n+1} = Q_n + 1/n [R_n - Q_n]
+    // Step size: constant alpha for optimistic-initial & non-stationary; 1/n for sample-average
     arm.pulls++;
-    const stepSize = 1.0 / arm.pulls;
+    const useConstantAlpha =
+      this.config.alpha !== undefined
+        ? true
+        : this.config.algorithm === "optimistic-initial" ||
+          !this.config.isStationary;
+    const alpha = this.config.alpha ?? 0.1;
+    const stepSize = useConstantAlpha ? alpha : 1.0 / arm.pulls;
     arm.estimatedValue += stepSize * (reward - arm.estimatedValue);
 
     // Non-stationary drift if configured
@@ -166,6 +200,8 @@ export class BanditEngine {
         a.trueMean += sampleNormal(0, this.config.driftStdDev);
       }
     }
+
+    this.updateArmStats();
 
     const result: BanditStepResult = {
       step: this.stepCount,

@@ -18,7 +18,11 @@ export function findBFSPath(
   goal: [number, number],
   walls: [number, number][],
   hazards: [number, number][] = [],
+  gridWidth?: number,
+  gridHeight?: number,
 ): [number, number][] {
+  const numRows = gridHeight ?? gridSize;
+  const numCols = gridWidth ?? gridSize;
   const wallSet = new Set(walls.map(([r, c]) => stateKey(r, c)));
   const hazardSet = new Set(hazards.map(([r, c]) => stateKey(r, c)));
 
@@ -57,7 +61,7 @@ export function findBFSPath(
       for (const [dr, dc] of dirs) {
         const nr = r + dr;
         const nc = c + dc;
-        if (nr < 0 || nr >= gridSize || nc < 0 || nc >= gridSize) continue;
+        if (nr < 0 || nr >= numRows || nc < 0 || nc >= numCols) continue;
         const key = stateKey(nr, nc);
         if (visited.has(key) || wallSet.has(key)) continue;
         if (avoidHazards && hazardSet.has(key)) continue;
@@ -82,8 +86,19 @@ export function simulateBFSAgainstObstacles(
   goal: [number, number],
   walls: [number, number][],
   initialObstacles: SmartObstacle[],
+  hazards: [number, number][] = [],
+  gridWidth?: number,
+  gridHeight?: number,
 ): BFSComparisonResult {
-  const path = findBFSPath(gridSize, start, goal, walls);
+  const path = findBFSPath(
+    gridSize,
+    start,
+    goal,
+    walls,
+    hazards,
+    gridWidth,
+    gridHeight,
+  );
   if (path.length === 0) {
     return {
       path: [],
@@ -141,6 +156,8 @@ export function simulateBFSAgainstObstacles(
         gridSize,
         wallSet,
         currentPositions,
+        gridWidth,
+        gridHeight,
       );
       currentPositions.add(stateKey(moved.r, moved.c));
       return moved;

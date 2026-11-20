@@ -42,7 +42,7 @@ export function RLGridLayerToggles({ store }: Props) {
       </Button>
       <Button
         size="sm"
-        variant={store.showBFSPath ? "secondary" : "outline"}
+        variant={store.showBFSPath ? "default" : "outline"}
         className="h-6 text-[10px] px-1.5"
         onClick={store.toggleShowBFSPath}
       >

@@ -65,6 +65,16 @@ describe("Dynamic Programming Engine", () => {
     const dpWithHaz = new DPEngine(RULES, 0.9, 0.001, [0, 0], [3, 3], [[1, 2]]);
     const hazInsp = dpWithHaz.inspectState(1, 2);
     assert.ok(hazInsp.formula.includes("Hazard Pit"));
+    assert.equal(hazInsp.currentV, 0);
+    assert.equal(hazInsp.actionValues[0].transitions.length, 0);
+  });
+
+  it("should treat terminal hazards as absorbing states with V=0", () => {
+    const dp = new DPEngine(RULES, 0.9, 0.001, [0, 0], [3, 3], [[1, 2]]);
+    const sweep = dp.stepValueIteration();
+    assert.equal(dp.values["1,2"], 0);
+    // Delta should not jump by hazard penalty (20)
+    assert.ok(sweep.delta < 15);
   });
 
   it("should converge using policy iteration on a 4x4 grid", () => {

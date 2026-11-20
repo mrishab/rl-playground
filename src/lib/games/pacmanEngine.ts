@@ -1,4 +1,9 @@
-import type { GameHyperparameters, Ghost, PacmanState } from "./types";
+import type {
+  ControllerMode,
+  GameHyperparameters,
+  Ghost,
+  PacmanState,
+} from "./types";
 
 export const PACMAN_GRID_SIZE = 9;
 
@@ -28,6 +33,7 @@ export class PacmanEngine {
   qTable: Map<string, number[]> = new Map();
   hyperparams: GameHyperparameters;
   stepCounter = 0;
+  controller: ControllerMode = "rl";
 
   constructor(hyperparams?: Partial<GameHyperparameters>) {
     this.hyperparams = {
@@ -96,15 +102,19 @@ export class PacmanEngine {
     };
   }
 
+  setController(controller: ControllerMode): void {
+    this.controller = controller;
+  }
+
   resetEpisode(): void {
-    const prevScore = this.state.score;
     this.state = this.createInitialState();
-    this.state.score = prevScore;
   }
 
   resetAll(): void {
+    const prevController = this.controller;
     this.qTable.clear();
     this.state = this.createInitialState();
+    this.controller = prevController;
   }
 
   getStateKey(state: PacmanState): string {
@@ -173,6 +183,67 @@ export class PacmanEngine {
     return bestActions[Math.floor(Math.random() * bestActions.length)];
   }
 
+  selectSearchAction(): number {
+    const s = this.state;
+    const queue: [number, number, number][] = [];
+    const visited = new Set<string>();
+    visited.add(`${s.pacman.row},${s.pacman.col}`);
+
+    const deltas: [number, number, number][] = [
+      [-1, 0, 0], // UP
+      [0, 1, 1], // RIGHT
+      [1, 0, 2], // DOWN
+      [0, -1, 3], // LEFT
+    ];
+
+    for (const [dr, dc, act] of deltas) {
+      const nr = s.pacman.row + dr;
+      const nc = s.pacman.col + dc;
+      if (
+        nr >= 0 &&
+        nr < PACMAN_GRID_SIZE &&
+        nc >= 0 &&
+        nc < PACMAN_GRID_SIZE &&
+        this.maze[nr][nc] === 0
+      ) {
+        queue.push([nr, nc, act]);
+        visited.add(`${nr},${nc}`);
+      }
+    }
+
+    while (queue.length > 0) {
+      const [r, c, firstAct] = queue.shift()!;
+      const key = `${r},${c}`;
+      if (s.pellets.has(key) || s.powerPellets.has(key)) {
+        return firstAct;
+      }
+
+      for (const [dr, dc] of [
+        [-1, 0],
+        [0, 1],
+        [1, 0],
+        [0, -1],
+      ]) {
+        const nr = r + dr;
+        const nc = c + dc;
+        const nKey = `${nr},${nc}`;
+        if (
+          nr >= 0 &&
+          nr < PACMAN_GRID_SIZE &&
+          nc >= 0 &&
+          nc < PACMAN_GRID_SIZE &&
+          this.maze[nr][nc] === 0 &&
+          !visited.has(nKey)
+        ) {
+          visited.add(nKey);
+          queue.push([nr, nc, firstAct]);
+        }
+      }
+    }
+
+    return 4; // STAY if nothing found
+  }
+
   getLegalMoves(r: number, c: number): [number, number][] {
     const deltas = [
       [-1, 0],
@@ -206,7 +277,11 @@ export class PacmanEngine {
 
     this.stepCounter++;
     const stateKey = this.getStateKey(s);
-    const action = actionOverride ?? this.selectAction(stateKey, true);
+    const action =
+      actionOverride ??
+      (this.controller === "search"
+        ? this.selectSearchAction()
+        : this.selectAction(stateKey, true));
 
     const actionDeltas = [
       [-1, 0], // UP
@@ -326,21 +401,23 @@ export class PacmanEngine {
 
     s.lastReward = reward;
 
-    // RL Q-update
-    const nextStateKey = this.getStateKey(s);
-    const qCurrent = this.getQValues(stateKey);
-    const nextQ = this.getQValues(nextStateKey);
+    if (this.controller === "rl") {
+      // RL Q-update
+      const nextStateKey = this.getStateKey(s);
+      const qCurrent = this.getQValues(stateKey);
+      const nextQ = this.getQValues(nextStateKey);
 
-    const target = done
-      ? reward
-      : reward +
-        this.hyperparams.discountFactor *
-          (this.hyperparams.algorithm === "sarsa"
-            ? nextQ[this.selectAction(nextStateKey, true)]
-            : Math.max(...nextQ));
+      const target = done
+        ? reward
+        : reward +
+          this.hyperparams.discountFactor *
+            (this.hyperparams.algorithm === "sarsa"
+              ? nextQ[this.selectAction(nextStateKey, true)]
+              : Math.max(...nextQ));
 
-    qCurrent[action] +=
-      this.hyperparams.learningRate * (target - qCurrent[action]);
+      qCurrent[action] +=
+        this.hyperparams.learningRate * (target - qCurrent[action]);
+    }
 
     return { reward, done };
   }

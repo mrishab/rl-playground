@@ -4,12 +4,14 @@ import type {
   ChessPieceColor,
   ChessPieceType,
   ChessState,
+  ControllerMode,
   GameHyperparameters,
 } from "./types";
 
 export const PIECE_VALUES: Record<ChessPieceType, number> = {
   P: 10,
   N: 30,
+  B: 30,
   R: 50,
   Q: 90,
   K: 1000,
@@ -19,6 +21,7 @@ export class ChessEngine {
   state: ChessState;
   qTable: Map<string, number[]> = new Map();
   hyperparams: GameHyperparameters;
+  controller: ControllerMode = "rl";
 
   constructor(hyperparams?: Partial<GameHyperparameters>) {
     this.hyperparams = {
@@ -70,13 +73,19 @@ export class ChessEngine {
     };
   }
 
+  setController(controller: ControllerMode): void {
+    this.controller = controller;
+  }
+
   resetEpisode(): void {
     this.state = this.createInitialState();
   }
 
   resetAll(): void {
+    const prevController = this.controller;
     this.qTable.clear();
     this.state = this.createInitialState();
+    this.controller = prevController;
   }
 
   getLegalMoves(color: ChessPieceColor, board = this.state.board): ChessMove[] {
@@ -381,6 +390,31 @@ export class ChessEngine {
     return bestMoves[Math.floor(Math.random() * bestMoves.length)];
   }
 
+  selectSearchMove(legalMoves: ChessMove[]): ChessMove {
+    if (legalMoves.length === 0) throw new Error("No legal moves");
+
+    // Static minimax heuristic: maximize immediate material capture and positional advance
+    let best = legalMoves[0];
+    let bestScore = -9999;
+
+    for (const m of legalMoves) {
+      let score = 0;
+      if (m.captured) {
+        score += PIECE_VALUES[m.captured.type] * 3;
+      }
+      if (m.piece.type === "P") score += (3 - m.to[0]) * 3;
+      if (m.piece.type === "N") score += 2;
+      if (this.isSquareAttacked(m.to[0], m.to[1], "b")) {
+        score -= PIECE_VALUES[m.piece.type];
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = m;
+      }
+    }
+    return best;
+  }
+
   applyMove(move: ChessMove): void {
     const { from, to, piece } = move;
     this.state.board[from[0]][from[1]] = null;
@@ -445,7 +479,10 @@ export class ChessEngine {
     }
 
     const stateKey = this.getStateKey(s);
-    const chosenMove = this.selectAgentMove(whiteMoves, true);
+    const chosenMove =
+      this.controller === "search"
+        ? this.selectSearchMove(whiteMoves)
+        : this.selectAgentMove(whiteMoves, true);
     const actionCat = this.classifyMove(chosenMove);
 
     // Apply White move
@@ -502,17 +539,19 @@ export class ChessEngine {
 
     s.lastReward = reward;
 
-    // RL Q-update
-    const nextStateKey = this.getStateKey(s);
-    const qCurrent = this.getQValues(stateKey);
-    const nextQ = this.getQValues(nextStateKey);
+    if (this.controller === "rl") {
+      // RL Q-update
+      const nextStateKey = this.getStateKey(s);
+      const qCurrent = this.getQValues(stateKey);
+      const nextQ = this.getQValues(nextStateKey);
 
-    const target = done
-      ? reward
-      : reward + this.hyperparams.discountFactor * Math.max(...nextQ);
+      const target = done
+        ? reward
+        : reward + this.hyperparams.discountFactor * Math.max(...nextQ);
 
-    qCurrent[actionCat] +=
-      this.hyperparams.learningRate * (target - qCurrent[actionCat]);
+      qCurrent[actionCat] +=
+        this.hyperparams.learningRate * (target - qCurrent[actionCat]);
+    }
 
     return { reward, done };
   }

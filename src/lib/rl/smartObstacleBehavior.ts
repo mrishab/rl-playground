@@ -46,12 +46,16 @@ export function stepSmartObstacle(
   gridSize: number,
   staticWalls: Set<string>,
   occupiedPositions?: Set<string>,
+  gridWidth?: number,
+  gridHeight?: number,
 ): SmartObstacle {
   const { r, c, strategy } = obs;
   const patrolDir = obs.patrolDir ?? [0, 1];
+  const numRows = gridHeight ?? gridSize;
+  const numCols = gridWidth ?? gridSize;
 
   const isValid = (nr: number, nc: number) => {
-    if (nr < 0 || nr >= gridSize || nc < 0 || nc >= gridSize) return false;
+    if (nr < 0 || nr >= numRows || nc < 0 || nc >= numCols) return false;
     const key = stateKey(nr, nc);
     if (staticWalls.has(key)) return false;
     if (occupiedPositions?.has(key)) return false;

@@ -165,6 +165,10 @@ export class DPEngine {
           continue;
         }
         if (this.obstacles.has(key)) continue;
+        if (this.rules.hazardIsTerminal && this.hazards.has(key)) {
+          newValues[key] = 0;
+          continue;
+        }
 
         let maxExpected = -Infinity;
         let bestAction: Action = 0;
@@ -214,6 +218,10 @@ export class DPEngine {
           continue;
         }
         if (this.obstacles.has(key)) continue;
+        if (this.rules.hazardIsTerminal && this.hazards.has(key)) {
+          newValues[key] = 0;
+          continue;
+        }
 
         const currentAct = this.policy[key] ?? 0;
         const transitions = this.getTransitions(r, c, currentAct);
@@ -254,6 +262,7 @@ export class DPEngine {
         const key = stateKey(r, c);
         if (r === this.goalPos[0] && c === this.goalPos[1]) continue;
         if (this.obstacles.has(key)) continue;
+        if (this.rules.hazardIsTerminal && this.hazards.has(key)) continue;
 
         const oldAct = this.policy[key] ?? 0;
         let maxExpected = -Infinity;
@@ -318,6 +327,9 @@ export class DPEngine {
     const bestAction = this.policy[key] ?? 0;
     const isGoal = r === this.goalPos[0] && c === this.goalPos[1];
     const isObstacle = this.obstacles.has(key);
+    const isHazard = this.hazards.has(key);
+    const isTerminalHazard = isHazard && this.rules.hazardIsTerminal;
+    const isTerminal = isGoal || isObstacle || isTerminalHazard;
 
     const actionValues: DPStateInspection["actionValues"] = {
       0: { expectedValue: 0, transitions: [] },
@@ -326,36 +338,47 @@ export class DPEngine {
       3: { expectedValue: 0, transitions: [] },
     };
 
-    for (let a = 0; a < 4; a++) {
-      const act = a as Action;
-      const transitions = this.getTransitions(r, c, act);
-      let expected = 0;
-      const transDetails = [];
+    if (!isTerminal) {
+      for (let a = 0; a < 4; a++) {
+        const act = a as Action;
+        const transitions = this.getTransitions(r, c, act);
+        let expected = 0;
+        const transDetails = [];
 
-      for (const t of transitions) {
-        const nextKey = stateKey(t.nextState[0], t.nextState[1]);
-        const nextV = t.isTerminal ? 0 : this.values[nextKey] || 0;
-        expected += t.prob * (t.reward + this.gamma * nextV);
-        transDetails.push({
-          nextState: t.nextState,
-          prob: t.prob,
-          reward: t.reward,
-          nextV,
-        });
+        for (const t of transitions) {
+          const nextKey = stateKey(t.nextState[0], t.nextState[1]);
+          const nextV = t.isTerminal ? 0 : this.values[nextKey] || 0;
+          expected += t.prob * (t.reward + this.gamma * nextV);
+          transDetails.push({
+            nextState: t.nextState,
+            prob: t.prob,
+            reward: t.reward,
+            nextV,
+          });
+        }
+
+        actionValues[act] = {
+          expectedValue: expected,
+          transitions: transDetails,
+        };
       }
-
-      actionValues[act] = {
-        expectedValue: expected,
-        transitions: transDetails,
-      };
     }
 
-    let formula = `V*(${r},${c}) = max_a Σ P(s'|s,a)[R + γ V(s')] = ${currentV.toFixed(3)} (best: ${ACTION_NAMES[bestAction]})`;
+    const maxQ = Math.max(
+      ...Object.values(actionValues).map((v) => v.expectedValue),
+    );
+
+    let formula = this.isConverged
+      ? `V*(${r},${c}) = max_a Q(${r},${c}, a) = ${currentV.toFixed(3)} (optimal: ${ACTION_NAMES[bestAction]})`
+      : `Current V(${r},${c}) = ${currentV.toFixed(3)} | Lookahead max_a Q(${r},${c}, a) = ${maxQ.toFixed(3)} (best: ${ACTION_NAMES[bestAction]})`;
+
     if (isGoal) {
-      formula = `Terminal Goal (${r},${c}): Target reached with reward +${this.rules.goalReward}, V(s) = 0`;
+      formula = `Terminal Goal (${r},${c}): Target reached with reward +${this.rules.goalReward}, V(s) = 0.000`;
     } else if (isObstacle) {
-      formula = `Obstacle Cell (${r},${c}): Impassable barrier, V(s) = 0`;
-    } else if (this.hazards.has(key)) {
+      formula = `Obstacle Cell (${r},${c}): Impassable barrier, V(s) = 0.000`;
+    } else if (isTerminalHazard) {
+      formula = `Hazard Pit (${r},${c}): Terminal absorbing state with penalty ${this.rules.hazardPenalty}, V(s) = 0.000`;
+    } else if (isHazard) {
       formula = `Hazard Pit (${r},${c}): Penalty ${this.rules.hazardPenalty}, V(s) = ${currentV.toFixed(3)} (best: ${ACTION_NAMES[bestAction]})`;
     }
 

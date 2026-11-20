@@ -8,13 +8,29 @@ type Props = {
 };
 
 export function RLControlSliders({ params, onChange }: Props) {
+  const isDP = params.algorithm === "value-iteration";
+  const isMC = params.algorithm === "monte-carlo";
+
+  const alphaLabel = isDP
+    ? "Learning Rate α (N/A for Exact DP)"
+    : isMC
+      ? "Learning Rate α (Sample-Average 1/N)"
+      : `Learning Rate α (${params.learningRate.toFixed(2)})`;
+
+  const epsLabel = isDP
+    ? "Exploration Rate ε (N/A for Exact DP)"
+    : `Exploration Rate ε (${Math.round(params.explorationRate * 100)}%)`;
+
   return (
     <div className="space-y-3.5">
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
-          <Label>Learning Rate α ({params.learningRate.toFixed(2)})</Label>
+          <Label className={isDP || isMC ? "text-muted-foreground" : ""}>
+            {alphaLabel}
+          </Label>
         </div>
         <Slider
+          disabled={isDP || isMC}
           min={5}
           max={100}
           step={5}
@@ -36,11 +52,12 @@ export function RLControlSliders({ params, onChange }: Props) {
       </div>
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
-          <Label>
-            Exploration Rate ε ({Math.round(params.explorationRate * 100)}%)
+          <Label className={isDP ? "text-muted-foreground" : ""}>
+            {epsLabel}
           </Label>
         </div>
         <Slider
+          disabled={isDP}
           min={0}
           max={80}
           step={5}

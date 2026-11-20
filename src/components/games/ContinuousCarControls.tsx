@@ -48,7 +48,7 @@ export function ContinuousCarControls({
           <Zap className="h-3 w-3 fill-warning text-warning" />
           <span>Boost Car</span>
         </Button>
-        <div className="text-[10px] truncate max-w-[220px] text-muted-foreground">
+        <div className="text-[10px] text-muted-foreground leading-tight min-w-0 text-right flex-1">
           {bumpNotice || (state.isOver ? "Race Over" : "Racing Active")}
         </div>
       </div>

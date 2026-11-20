@@ -29,7 +29,11 @@ export function DPControlsStatus({
             {isPI ? "Policy Changes" : "Max Δ"}
           </div>
           <div className="text-base font-bold font-mono">
-            {isPI ? maxDelta : maxDelta.toFixed(4)}
+            {isPI
+              ? maxDelta
+              : isConverged && maxDelta > 0 && maxDelta < 0.001
+                ? maxDelta.toFixed(5)
+                : maxDelta.toFixed(4)}
           </div>
         </div>
       </div>

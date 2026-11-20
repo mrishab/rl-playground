@@ -1,4 +1,5 @@
 import type {
+  ControllerMode,
   GameHyperparameters,
   StrategyState,
   StrategyUnit,
@@ -30,6 +31,7 @@ export class StrategyEngine {
   state: StrategyState;
   qTable: Map<string, number[]> = new Map();
   hyperparams: GameHyperparameters;
+  controller: ControllerMode = "rl";
 
   constructor(hyperparams?: Partial<GameHyperparameters>) {
     this.hyperparams = {
@@ -79,15 +81,19 @@ export class StrategyEngine {
     };
   }
 
+  setController(controller: ControllerMode): void {
+    this.controller = controller;
+  }
+
   resetEpisode(): void {
-    const prevScore = this.state.score;
     this.state = this.createInitialState();
-    this.state.score = prevScore;
   }
 
   resetAll(): void {
+    const prevController = this.controller;
     this.qTable.clear();
     this.state = this.createInitialState();
+    this.controller = prevController;
   }
 
   isObstacle(r: number, c: number): boolean {
@@ -160,6 +166,59 @@ export class StrategyEngine {
       }
     }
     return bestActions[Math.floor(Math.random() * bestActions.length)];
+  }
+
+  selectSearchAction(): number {
+    const s = this.state;
+    // If adjacent to opponent, attack!
+    const distOpp =
+      Math.abs(s.agent.row - s.opponent.row) +
+      Math.abs(s.agent.col - s.opponent.col);
+    if (distOpp <= 1) return 5; // ATTACK
+
+    // If standing on uncaptured node, capture!
+    const standingNode = s.nodes.find(
+      (n) => n.row === s.agent.row && n.col === s.agent.col,
+    );
+    if (standingNode && standingNode.owner !== "agent") {
+      return 4; // CAPTURE
+    }
+
+    // Move toward nearest uncaptured node or opponent
+    const target = s.nodes.find((n) => n.owner !== "agent") || {
+      row: s.opponent.row,
+      col: s.opponent.col,
+    };
+
+    const deltas = [
+      [-1, 0, 0], // UP
+      [0, 1, 1], // RIGHT
+      [1, 0, 2], // DOWN
+      [0, -1, 3], // LEFT
+    ];
+
+    let bestAction = 0;
+    let bestDist = 999;
+
+    for (const [dr, dc, act] of deltas) {
+      const nr = s.agent.row + dr;
+      const nc = s.agent.col + dc;
+      if (
+        nr >= 0 &&
+        nr < this.gridSize &&
+        nc >= 0 &&
+        nc < this.gridSize &&
+        !this.isObstacle(nr, nc) &&
+        !(nr === s.opponent.row && nc === s.opponent.col)
+      ) {
+        const d = Math.abs(nr - target.row) + Math.abs(nc - target.col);
+        if (d < bestDist) {
+          bestDist = d;
+          bestAction = act;
+        }
+      }
+    }
+    return bestAction;
   }
 
   executeOpponentAI(): void {
@@ -240,7 +299,11 @@ export class StrategyEngine {
 
     s.turn += 1;
     const stateKey = this.getStateKey(s);
-    const action = actionOverride ?? this.selectAction(stateKey, true);
+    const action =
+      actionOverride ??
+      (this.controller === "search"
+        ? this.selectSearchAction()
+        : this.selectAction(stateKey, true));
 
     let reward = -0.05; // tiny action cost
     let done = false;
@@ -285,7 +348,7 @@ export class StrategyEngine {
         desc = `Captured ${node.id}`;
       } else {
         reward -= 0.4;
-        desc = "No uncaptured node";
+        desc = "Not on capturable node";
       }
     } else if (action === 5) {
       // ATTACK
@@ -366,21 +429,23 @@ export class StrategyEngine {
     s.lastReward = reward;
     s.lastActionDesc = desc;
 
-    // RL Q-update
-    const nextStateKey = this.getStateKey(s);
-    const qCurrent = this.getQValues(stateKey);
-    const nextQ = this.getQValues(nextStateKey);
+    if (this.controller === "rl") {
+      // RL Q-update
+      const nextStateKey = this.getStateKey(s);
+      const qCurrent = this.getQValues(stateKey);
+      const nextQ = this.getQValues(nextStateKey);
 
-    const target = done
-      ? reward
-      : reward +
-        this.hyperparams.discountFactor *
-          (this.hyperparams.algorithm === "sarsa"
-            ? nextQ[this.selectAction(nextStateKey, true)]
-            : Math.max(...nextQ));
+      const target = done
+        ? reward
+        : reward +
+          this.hyperparams.discountFactor *
+            (this.hyperparams.algorithm === "sarsa"
+              ? nextQ[this.selectAction(nextStateKey, true)]
+              : Math.max(...nextQ));
 
-    qCurrent[action] +=
-      this.hyperparams.learningRate * (target - qCurrent[action]);
+      qCurrent[action] +=
+        this.hyperparams.learningRate * (target - qCurrent[action]);
+    }
 
     return { reward, done };
   }

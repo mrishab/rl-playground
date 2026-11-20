@@ -536,6 +536,10 @@ export class ContinuousCarEngine {
 
   computeRaceStandings(): void {
     const s = this.state;
+    if (s.isCollided) {
+      s.racePosition = 3;
+      return;
+    }
     const agentTotal = s.lapCount + s.lapProgress;
     let rank = 1;
 

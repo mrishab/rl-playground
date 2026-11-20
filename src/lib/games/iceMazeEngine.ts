@@ -81,7 +81,24 @@ export class IceMazeEngine {
       controller: "rl",
       failedBySlip: false,
       visitedPath: [[this.startPos[0], this.startPos[1]]],
+      policyArrows: this.getPolicyMap(),
     };
+  }
+
+  getPolicyMap(): Record<string, number> {
+    const map: Record<string, number> = {};
+    for (const [key, q] of this.qTable.entries()) {
+      let maxQ = -Infinity;
+      let bestA = 0;
+      for (let a = 0; a < 4; a++) {
+        if (q[a] > maxQ) {
+          maxQ = q[a];
+          bestA = a;
+        }
+      }
+      map[key] = bestA;
+    }
+    return map;
   }
 
   setSlipRate(slipRate: number): void {
@@ -312,7 +329,7 @@ export class IceMazeEngine {
       reward = -100.0;
       s.isOver = true;
       s.won = false;
-      s.failedBySlip = didSlip || s.controller === "search";
+      s.failedBySlip = didSlip;
       done = true;
     } else if (newRow === this.goalPos[0] && newCol === this.goalPos[1]) {
       // Reached Goal!
@@ -346,6 +363,7 @@ export class IceMazeEngine {
 
       qCurrent[intendedAction] +=
         this.hyperparams.learningRate * (target - qCurrent[intendedAction]);
+      s.policyArrows = this.getPolicyMap();
     }
 
     return { reward, done };
@@ -385,6 +403,7 @@ export class IceMazeEngine {
     }
 
     this.state.controller = prevController;
+    this.state.policyArrows = this.getPolicyMap();
     return {
       episodes,
       wins,

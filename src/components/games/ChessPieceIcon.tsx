@@ -32,6 +32,14 @@ export function ChessPieceIcon({ type, color, className = "w-7 h-7" }: Props) {
       {type === "R" && (
         <path d="M5 20h14M6 18h12V10l-1-1V6h-2v2h-2V6h-2v2H7V6H5v3l-1 1v8h2z" />
       )}
+      {type === "B" && (
+        <>
+          <path d="M12 4a3.5 3.5 0 0 0-3.5 3.5c0 1.5.8 2.8 2 3.5L9 18h6l-1.5-7c1.2-.7 2-2 2-3.5A3.5 3.5 0 0 0 12 4z" />
+          <path d="M5 20h14" />
+          <circle cx="12" cy="3" r="1" />
+          <path d="M10 8h4M12 6v4" />
+        </>
+      )}
       {type === "N" && (
         <>
           <path d="M6 20h12M7 18h10l-1-7c0-2-1.5-4-3.5-5-2 0-3 1-3.5 2.5L7 11l2 1-2 3v3z" />
