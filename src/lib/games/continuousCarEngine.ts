@@ -19,10 +19,11 @@ export class ContinuousCarEngine {
   searchStepCounter = 0;
   searchDiscreteSteer = 0;
   villainErrorRate = 0.1; // Default 10% configurable
+  targetLaps = 3; // Configurable number of laps to win (1 to 10, default 3)
   isTraining = false;
   agentLapMidpoint = false;
 
-  constructor(hyperparams?: Partial<GameHyperparameters>) {
+  constructor(hyperparams?: Partial<GameHyperparameters>, targetLaps = 3) {
     this.hyperparams = {
       learningRate: 0.05,
       discountFactor: 0.95,
@@ -31,12 +32,21 @@ export class ContinuousCarEngine {
       algorithm: "q-learning",
       ...hyperparams,
     };
+    const val = Number.isFinite(targetLaps) ? Math.round(targetLaps) : 3;
+    this.targetLaps = Math.max(1, Math.min(10, val));
     this.state = this.createInitialState();
   }
 
   setVillainErrorRate(rate: number): void {
-    this.villainErrorRate = Math.max(0, Math.min(1, rate));
+    const safeRate = Number.isFinite(rate) ? rate : 0.1;
+    this.villainErrorRate = Math.max(0, Math.min(1, safeRate));
     this.state.villainErrorRate = this.villainErrorRate;
+  }
+
+  setTargetLaps(laps: number): void {
+    const val = Number.isFinite(laps) ? Math.round(laps) : 3;
+    this.targetLaps = Math.max(1, Math.min(10, val));
+    this.state.targetLaps = this.targetLaps;
   }
 
   triggerBoost(): void {
@@ -157,6 +167,7 @@ export class ContinuousCarEngine {
       skidMarks: [],
       lapCount: 0,
       lapProgress: 0,
+      targetLaps: this.targetLaps,
       isCollided: false,
       isOver: false,
       lastReward: 0,
@@ -308,12 +319,19 @@ export class ContinuousCarEngine {
     let finalThrottle = throttle;
     let shouldBoost = false;
 
+    if (s.controller === "rl") {
+      // In RL mode, car opportunistically triggers boost to contest position against faster villains
+      if (s.boostMeter > 50 || (s.racePosition > 1 && s.boostMeter > 20)) {
+        shouldBoost = true;
+      }
+    }
+
     if (explore && Math.random() < this.hyperparams.explorationRate) {
       const steerNoise = (Math.random() * 2 - 1) * 0.12;
       finalSteer = Math.max(-0.25, Math.min(0.25, steering + steerNoise));
       const throttleNoise = (Math.random() * 2 - 1) * 0.2;
       finalThrottle = Math.max(-1, Math.min(1, throttle + throttleNoise));
-      if (Math.random() < 0.15 && s.boostMeter > 30) {
+      if (Math.random() < 0.2 && s.boostMeter > 15) {
         shouldBoost = true;
       }
     }
@@ -345,7 +363,7 @@ export class ContinuousCarEngine {
         if (Math.random() < 0.5) {
           v.angle += Math.random() > 0.5 ? 0.2 : -0.2;
         } else {
-          v.speed = Math.max(2.8, v.speed * 0.85);
+          v.speed = Math.max(2.95, v.speed * 0.88);
         }
       }
 
@@ -442,7 +460,7 @@ export class ContinuousCarEngine {
           const deflSign = rxA * nx + ryA * ny >= 0 ? -1 : 1;
           s.angle += deflSign * 0.08;
           s.speed = Math.max(1.2, s.speed * 0.82);
-          v.speed = Math.max(2.8, v.speed * 0.88);
+          v.speed = Math.max(2.95, v.speed * 0.88);
           const currentR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
           v.angle += v.targetRadius < currentR ? -0.1 : 0.1;
           s.lossOfControl = 0.35;
@@ -719,17 +737,27 @@ export class ContinuousCarEngine {
       ) {
         s.lapCount += 1;
         this.agentLapMidpoint = false;
-        reward += s.racePosition === 1 ? 50.0 : 15.0;
-        s.isOver = true;
-        done = true;
+        s.lapProgress = currentProgress;
+        this.computeRaceStandings();
+        if (s.lapCount >= this.targetLaps) {
+          reward += s.racePosition === 1 ? 50.0 : 15.0;
+          s.isOver = true;
+          done = true;
+        } else {
+          reward += s.racePosition === 1 ? 20.0 : 8.0;
+        }
+      } else {
+        s.lapProgress = currentProgress;
       }
-      s.lapProgress = currentProgress;
 
       if (
-        s.villains.some((v) => v.lapCount >= 1 && v.lapProgress < 0.05) &&
+        !done &&
+        s.villains.some((v) => v.lapCount >= this.targetLaps) &&
         s.racePosition > 1
       ) {
         reward -= 25.0;
+        s.isOver = true;
+        done = true;
       }
     }
 
@@ -781,16 +809,19 @@ export class ContinuousCarEngine {
       this.resetEpisode();
       let steps = 0;
       let epReward = 0;
-      const startLaps = this.state.lapCount;
+      const maxSteps = Math.max(200, this.targetLaps * 160);
 
-      while (!this.state.isOver && steps < 200) {
+      while (!this.state.isOver && steps < maxSteps) {
         const { reward, done } = this.step(undefined, true);
         epReward += reward;
         steps++;
         if (done) break;
       }
 
-      if (this.state.lapCount > startLaps && this.state.racePosition === 1) {
+      if (
+        this.state.lapCount >= this.targetLaps &&
+        this.state.racePosition === 1
+      ) {
         lapsWon++;
       }
       totalReward += epReward;

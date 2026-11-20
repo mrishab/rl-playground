@@ -12,6 +12,7 @@ type Props = {
 
 export function ContinuousCarView({ state }: Props) {
   const setErrorRate = useGamesStore((s) => s.setContinuousCarVillainErrorRate);
+  const setTargetLaps = useGamesStore((s) => s.setContinuousCarTargetLaps);
   const onBoost = useGamesStore((s) => s.triggerContinuousCarBoost);
 
   const failureNotice =
@@ -33,6 +34,7 @@ export function ContinuousCarView({ state }: Props) {
         <ContinuousCarControls
           state={state}
           onErrorRateChange={setErrorRate}
+          onTargetLapsChange={setTargetLaps}
           onBoost={onBoost}
         />
         <ContinuousCarTelemetry state={state} />

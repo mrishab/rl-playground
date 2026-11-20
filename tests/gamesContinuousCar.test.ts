@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { ContinuousCarEngine } from "../src/lib/games/continuousCarEngine.ts";
+import { useGamesStore } from "../src/stores/gamesStore.ts";
 
 describe("Autonomous Car Continuous Track RL Engine", () => {
   it("initializes car on track with continuous coordinates, heading, and neural network", () => {
@@ -501,5 +502,230 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
       engine.state.lapProgress < 0.15,
       "Reverse crossing must not credit near-full lap progress (must reset to 0.0)",
     );
+  });
+
+  it("ensures villain cars are always faster than RL agent car on open track across errors", () => {
+    const engine = new ContinuousCarEngine();
+    // Agent max cruising speed is 2.85
+    const agentMaxCruisingSpeed = 2.85;
+
+    // Base speeds must strictly exceed agent max cruising speed
+    for (const v of engine.state.villains) {
+      assert.ok(
+        v.baseSpeed > agentMaxCruisingSpeed,
+        `Villain ${v.name} base speed (${v.baseSpeed}) must exceed agent max cruising speed (${agentMaxCruisingSpeed})`,
+      );
+    }
+
+    // Step villains under various error rates without tactical bumps
+    for (const errRate of [0, 0.2, 0.5]) {
+      engine.setVillainErrorRate(errRate);
+      for (let s = 0; s < 100; s++) {
+        engine.stepVillains();
+        for (const v of engine.state.villains) {
+          assert.ok(
+            v.speed > agentMaxCruisingSpeed,
+            `Villain ${v.name} speed (${v.speed}) must strictly exceed agent cruising max (${agentMaxCruisingSpeed}) on open track`,
+          );
+        }
+      }
+    }
+  });
+
+  it("initializes configurable target laps with default 3 laps, bounded between 1 and 10", () => {
+    const engine = new ContinuousCarEngine();
+    assert.equal(engine.targetLaps, 3);
+    assert.equal(engine.state.targetLaps, 3);
+
+    // Custom constructor
+    const customEngine = new ContinuousCarEngine(undefined, 5);
+    assert.equal(customEngine.targetLaps, 5);
+    assert.equal(customEngine.state.targetLaps, 5);
+
+    // Dynamic configuration
+    engine.setTargetLaps(7);
+    assert.equal(engine.targetLaps, 7);
+    assert.equal(engine.state.targetLaps, 7);
+
+    // Clamping to [1, 10]
+    engine.setTargetLaps(-2);
+    assert.equal(engine.targetLaps, 1);
+    assert.equal(engine.state.targetLaps, 1);
+
+    engine.setTargetLaps(25);
+    assert.equal(engine.targetLaps, 10);
+    assert.equal(engine.state.targetLaps, 10);
+
+    // Rounding
+    engine.setTargetLaps(4.7);
+    assert.equal(engine.targetLaps, 5);
+  });
+
+  it("does not terminate episode on intermediate laps when target laps > 1", () => {
+    const engine = new ContinuousCarEngine(undefined, 3);
+    assert.equal(engine.targetLaps, 3);
+
+    // Helper to simulate completing 1 valid forward lap
+    const simulateLapCrossing = () => {
+      engine.agentLapMidpoint = true;
+      engine.state.lapProgress = 0.95;
+      engine.state.x = engine.centerX + 1;
+      engine.state.y = engine.centerY - 67.5;
+      engine.state.angle = 0; // heading East
+      return engine.step(0);
+    };
+
+    // Complete Lap 1: target is 3, so episode must NOT end
+    const lap1Res = simulateLapCrossing();
+    assert.equal(engine.state.lapCount, 1);
+    assert.equal(engine.state.isOver, false, "Lap 1 of 3 must not end race");
+    assert.equal(lap1Res.done, false, "Done must be false on lap 1 of 3");
+
+    // Complete Lap 2: target is 3, so episode must NOT end
+    const lap2Res = simulateLapCrossing();
+    assert.equal(engine.state.lapCount, 2);
+    assert.equal(engine.state.isOver, false, "Lap 2 of 3 must not end race");
+    assert.equal(lap2Res.done, false, "Done must be false on lap 2 of 3");
+
+    // Complete Lap 3: target is 3, so episode MUST terminate
+    const lap3Res = simulateLapCrossing();
+    assert.equal(engine.state.lapCount, 3);
+    assert.equal(
+      engine.state.isOver,
+      true,
+      "Target lap reached: race must finish",
+    );
+    assert.equal(
+      lap3Res.done,
+      true,
+      "Done must be true on target lap completion",
+    );
+  });
+
+  it("terminates episode with win reward when agent completes configured target laps in 1st position", () => {
+    const engine = new ContinuousCarEngine(undefined, 2);
+    engine.state.racePosition = 1;
+
+    // Simulate lap 1
+    engine.agentLapMidpoint = true;
+    engine.state.lapProgress = 0.92;
+    engine.state.x = engine.centerX + 1;
+    engine.state.y = engine.centerY - 67.5;
+    engine.state.angle = 0;
+    const res1 = engine.step(0);
+    assert.equal(engine.state.lapCount, 1);
+    assert.equal(engine.state.isOver, false);
+    assert.ok(res1.reward > 0);
+
+    // Simulate lap 2 (target lap)
+    engine.agentLapMidpoint = true;
+    engine.state.lapProgress = 0.92;
+    engine.state.x = engine.centerX + 1;
+    engine.state.y = engine.centerY - 67.5;
+    engine.state.angle = 0;
+    const res2 = engine.step(0);
+    assert.equal(engine.state.lapCount, 2);
+    assert.equal(engine.state.isOver, true);
+    assert.equal(res2.done, true);
+    assert.ok(
+      res2.reward >= 50.0,
+      "Winning final lap in 1st position must award victory reward",
+    );
+  });
+
+  it("terminates episode when a villain completes configured target laps first", () => {
+    const engine = new ContinuousCarEngine(undefined, 2);
+    assert.equal(engine.targetLaps, 2);
+
+    // Agent is still on lap 0
+    engine.state.lapCount = 0;
+    engine.state.lapProgress = 0.5;
+
+    // Villain 1 reaches target laps (2 laps) ahead of agent
+    const v1 = engine.state.villains[0];
+    v1.lapCount = 2;
+    v1.lapProgress = 0.02;
+    v1.totalProgress = 2.02;
+    engine.computeRaceStandings();
+    assert.ok(
+      engine.state.racePosition > 1,
+      "Agent should trail winning villain",
+    );
+
+    const res = engine.step(0);
+    assert.equal(
+      engine.state.isOver,
+      true,
+      "Episode must terminate when villain completes target laps first",
+    );
+    assert.equal(res.done, true);
+    assert.ok(
+      res.reward < 0,
+      "Loss penalty must be applied when villain wins race",
+    );
+  });
+
+  it("integrates target laps with gamesStore", () => {
+    const store = useGamesStore.getState();
+    assert.equal(store.continuousCarState.targetLaps, 3);
+
+    store.setContinuousCarTargetLaps(5);
+    assert.equal(useGamesStore.getState().continuousCarState.targetLaps, 5);
+
+    store.resetEpisode();
+    assert.equal(
+      useGamesStore.getState().continuousCarState.targetLaps,
+      5,
+      "Target laps should persist across episode resets",
+    );
+  });
+
+  it("handles dynamic target lap adjustments mid-race without abrupt termination mid-track", () => {
+    const engine = new ContinuousCarEngine(undefined, 5);
+    engine.state.lapCount = 2;
+    engine.state.lapProgress = 0.5;
+    engine.state.isOver = false;
+
+    // User dials down target laps from 5 to 2 mid-track
+    engine.setTargetLaps(2);
+    assert.equal(engine.targetLaps, 2);
+    assert.equal(
+      engine.state.isOver,
+      false,
+      "Car should not abruptly freeze/terminate mid-track when slider is moved",
+    );
+
+    // Car continues and completes current lap (advances lapCount to 3 >= targetLaps 2)
+    engine.agentLapMidpoint = true;
+    engine.state.lapProgress = 0.95;
+    engine.state.x = engine.centerX + 1;
+    engine.state.y = engine.centerY - 67.5;
+    engine.state.angle = 0;
+    const res = engine.step(0);
+
+    assert.equal(engine.state.lapCount, 3);
+    assert.equal(
+      engine.state.isOver,
+      true,
+      "Episode terminates legitimately upon finish line crossing",
+    );
+    assert.equal(res.done, true);
+  });
+
+  it("safely handles non-finite inputs to setTargetLaps and setVillainErrorRate", () => {
+    const engine = new ContinuousCarEngine();
+
+    // Non-finite target laps defaults safely to 3
+    engine.setTargetLaps(Number.NaN);
+    assert.equal(engine.targetLaps, 3);
+    assert.equal(engine.state.targetLaps, 3);
+
+    engine.setTargetLaps(Number.POSITIVE_INFINITY);
+    assert.equal(engine.targetLaps, 3);
+
+    // Non-finite villain error rate defaults safely to 0.1
+    engine.setVillainErrorRate(Number.NaN);
+    assert.equal(engine.villainErrorRate, 0.1);
+    assert.equal(engine.state.villainErrorRate, 0.1);
   });
 });

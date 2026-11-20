@@ -507,6 +507,7 @@ describe("RL Playground - Comprehensive End-to-End Test Suite", () => {
         cy.contains("dF:").should("be.visible");
         cy.contains("dR:").should("be.visible");
         cy.contains("Laps:").should("be.visible");
+        cy.contains("Laps to Win:").should("be.visible");
         cy.contains("Villain Error Rate:").should("be.visible");
         cy.contains("Boost!").should("be.visible");
         cy.contains("Grip:").should("be.visible");

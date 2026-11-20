@@ -263,6 +263,7 @@ export type ContinuousCarState = {
   skidMarks: [number, number][];
   lapCount: number;
   lapProgress: number; // 0 to 1
+  targetLaps: number; // Configurable number of laps to win (1 to 10, default 3)
   isCollided: boolean;
   isOver: boolean;
   lastReward: number;

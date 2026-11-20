@@ -71,6 +71,7 @@ export type GamesStoreState = {
   setControllerMode: (mode: ControllerMode) => void;
   setIceMazeSlipRate: (rate: number) => void;
   setContinuousCarVillainErrorRate: (rate: number) => void;
+  setContinuousCarTargetLaps: (laps: number) => void;
   triggerContinuousCarBoost: () => void;
   setHyperparams: (patch: Partial<GameHyperparameters>) => void;
   togglePlay: () => void;
@@ -140,6 +141,11 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
 
   setContinuousCarVillainErrorRate: (rate) => {
     continuousCar.setVillainErrorRate(rate);
+    set({ continuousCarState: { ...continuousCar.state } });
+  },
+
+  setContinuousCarTargetLaps: (laps) => {
+    continuousCar.setTargetLaps(laps);
     set({ continuousCarState: { ...continuousCar.state } });
   },
 
@@ -432,7 +438,7 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
         const newEpisodes = isEpDone ? m.episodes + 1 : m.episodes;
         const won =
           !continuousCar.state.isCollided &&
-          continuousCar.state.lapCount > 0 &&
+          continuousCar.state.lapCount >= continuousCar.state.targetLaps &&
           continuousCar.state.racePosition === 1;
         const newWins = isEpDone && won ? m.wins + 1 : m.wins;
         const newLosses = isEpDone && !won ? m.losses + 1 : m.losses;
