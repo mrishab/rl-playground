@@ -48,13 +48,13 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 38 92% 50%;
+    --primary: 38 92% 35%;
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 38 92% 50%;
+    --accent: 38 92% 35%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
@@ -68,7 +68,7 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     --success: 142 76% 36%;
-    --warning: 45 93% 47%;
+    --warning: 38 92% 35%;
     --danger: 0 84% 60%;
     --info: 199 89% 48%;
   }
@@ -101,7 +101,7 @@
     --chart-4: 17 48% 64%;
     --chart-5: 304 36% 65%;
     --success: 117 48% 68%;
-    --warning: 49 100% 40%;
+    --warning: 45 95% 55%;
     --danger: 0 85% 62%;
     --info: 201 100% 65%;
   }
@@ -111,6 +111,11 @@
   * {
     border-color: hsl(var(--border));
     -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 
   html {
