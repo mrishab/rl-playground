@@ -1,4 +1,5 @@
 import type { QuizQuestion } from "./quizData";
+import { TheoryQuizFeedback } from "./TheoryQuizFeedback";
 import { TheoryQuizOption } from "./TheoryQuizOption";
 
 interface Props {
@@ -17,7 +18,7 @@ export function TheoryQuizItem({
   onSelect,
 }: Props) {
   const isAnswered = selectedOpt !== undefined;
-  const showReview = submitted && isAnswered;
+  const isCorrect = isAnswered && selectedOpt === q.correctIndex;
 
   return (
     <div className="space-y-2 border-b pb-4 last:border-b-0 last:pb-0">
@@ -37,25 +38,18 @@ export function TheoryQuizItem({
             optIdx={optIdx}
             isSelected={selectedOpt === optIdx}
             isCorrect={optIdx === q.correctIndex}
-            submitted={showReview}
+            isAnswered={isAnswered}
+            submitted={submitted}
             onSelect={onSelect}
           />
         ))}
       </div>
-      {showReview && (
-        <div className="pl-6 pt-1 text-[11px] text-muted-foreground">
-          <span className="font-semibold text-foreground">
-            {selectedOpt === q.correctIndex ? (
-              <span className="text-success font-bold mr-1">✓ Correct!</span>
-            ) : (
-              <span className="text-destructive font-bold mr-1">
-                ✗ Incorrect.
-              </span>
-            )}
-            Explanation:{" "}
-          </span>
-          {q.explanation}
-        </div>
+      {submitted && (
+        <TheoryQuizFeedback
+          isAnswered={isAnswered}
+          isCorrect={isCorrect}
+          explanation={q.explanation}
+        />
       )}
     </div>
   );

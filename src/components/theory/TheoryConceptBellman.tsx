@@ -1,44 +1,30 @@
+import { Link } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { BellmanEquationsDisplay } from "./BellmanEquationsDisplay";
 
 export function TheoryConceptBellman() {
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-semibold">
           2. Bellman Equations
         </CardTitle>
+        <Button
+          variant="ghost"
+          size="sm"
+          asChild
+          className="h-6 text-[11px] gap-1 px-2 text-primary"
+        >
+          <Link to="/dp">
+            Try Lab <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </Button>
       </CardHeader>
       <CardContent className="text-xs text-muted-foreground space-y-2.5">
         <p>Recursive decomposition of state and action values:</p>
-        <div className="space-y-2">
-          <div className="p-2 bg-muted/40 rounded font-mono text-[11px] text-foreground space-y-1">
-            <div className="text-[10px] font-sans font-semibold text-primary">
-              Bellman Expectation Equations:
-            </div>
-            <div>
-              V<sup>π</sup>(s) = Σ<sub>a</sub> π(a|s) Σ<sub>s&apos;</sub>{" "}
-              P(s&apos;|s, a) [R(s, a, s&apos;) + γ V<sup>π</sup>(s&apos;)]
-            </div>
-            <div>
-              Q<sup>π</sup>(s, a) = Σ<sub>s&apos;</sub> P(s&apos;|s, a) [R(s, a,
-              s&apos;) + γ Σ<sub>a&apos;</sub> π(a&apos;|s&apos;) Q<sup>π</sup>
-              (s&apos;, a&apos;)]
-            </div>
-          </div>
-          <div className="p-2 bg-muted/40 rounded font-mono text-[11px] text-foreground space-y-1">
-            <div className="text-[10px] font-sans font-semibold text-primary">
-              Bellman Optimality Equations:
-            </div>
-            <div>
-              V*(s) = max<sub>a</sub> Σ<sub>s&apos;</sub> P(s&apos;|s, a) [R(s,
-              a, s&apos;) + γ V*(s&apos;)]
-            </div>
-            <div>
-              Q*(s, a) = Σ<sub>s&apos;</sub> P(s&apos;|s, a) [R(s, a, s&apos;) +
-              γ max<sub>a&apos;</sub> Q*(s&apos;, a&apos;)]
-            </div>
-          </div>
-        </div>
+        <BellmanEquationsDisplay />
         <p>
           Solved iteratively via Dynamic Programming sweeps or sampled TD
           bootstrapping.

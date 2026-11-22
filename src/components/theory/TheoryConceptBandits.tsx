@@ -1,12 +1,25 @@
+import { Link } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export function TheoryConceptBandits() {
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-semibold">
           4. Multi-Armed Bandits &amp; UCB
         </CardTitle>
+        <Button
+          variant="ghost"
+          size="sm"
+          asChild
+          className="h-6 text-[11px] gap-1 px-2 text-primary"
+        >
+          <Link to="/bandits">
+            Try Lab <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </Button>
       </CardHeader>
       <CardContent className="text-xs text-muted-foreground space-y-2">
         <p>Balancing sample reward means with uncertainty bonuses:</p>
