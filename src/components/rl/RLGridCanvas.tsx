@@ -6,13 +6,14 @@ import type { useRLStore } from "@/stores/rlStore";
 import { stateKey } from "@/lib/rl/rlEngine";
 import { RLGridLayerToggles } from "./RLGridLayerToggles";
 import { RLInspectedCellPanel } from "./RLInspectedCellPanel";
+import { RLHeatmapLegend } from "./RLHeatmapLegend";
 
 interface Props {
   store: ReturnType<typeof useRLStore.getState>;
 }
 
 export function RLGridCanvas({ store }: Props) {
-  const [tool, setTool] = useState<EditTool>("hazard");
+  const [tool, setTool] = useState<EditTool>("inspect");
   const inspected = store.inspectedCell;
   const inspectedQ = inspected
     ? store.qTable[stateKey(inspected[0], inspected[1])] || [0, 0, 0, 0]
@@ -36,6 +37,7 @@ export function RLGridCanvas({ store }: Props) {
         {inspected && inspectedQ && (
           <RLInspectedCellPanel inspected={inspected} inspectedQ={inspectedQ} />
         )}
+        {store.showValueHeatmap && <RLHeatmapLegend />}
         {store.lastTransition && (
           <div className="w-full bg-muted/20 border border-dashed rounded p-2 text-[11px] font-mono text-muted-foreground">
             <span className="font-semibold text-foreground">

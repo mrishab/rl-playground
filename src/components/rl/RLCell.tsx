@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { getBgStyle, type RLCellProps } from "./rlCellUtils";
+import { getBgStyle, getCellTooltip, type RLCellProps } from "./rlCellUtils";
 import { RLCellContent } from "./RLCellContent";
 
 const BASE_CELL_CLS = cn(
@@ -24,6 +24,7 @@ export function RLCell(props: Props) {
     isBFSPath,
     isInspected,
     maxQ,
+    qValues,
     showHeatmap,
     onClick,
   } = props;
@@ -34,6 +35,7 @@ export function RLCell(props: Props) {
       type="button"
       data-testid={`grid-cell-${r}-${c}`}
       onClick={onClick}
+      title={getCellTooltip(r, c, qValues)}
       className={cn(
         BASE_CELL_CLS,
         isObstacle &&

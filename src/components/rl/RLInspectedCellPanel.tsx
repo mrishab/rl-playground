@@ -1,4 +1,5 @@
 import { ACTION_NAMES } from "@/lib/rl/types";
+import { formatNum } from "@/lib/rl/rlEngine";
 
 interface Props {
   inspected: [number, number];
@@ -14,7 +15,7 @@ export function RLInspectedCellPanel({ inspected, inspectedQ }: Props) {
       <div className="flex items-center justify-between font-medium">
         <span>
           State ({inspected[0]}, {inspected[1]}): V*(s) ={" "}
-          <span className="font-mono text-primary">{maxQ.toFixed(2)}</span>
+          <span className="font-mono text-primary">{formatNum(maxQ, 2)}</span>
         </span>
         <span className="text-[11px] text-muted-foreground">
           Best:{" "}
@@ -36,7 +37,7 @@ export function RLInspectedCellPanel({ inspected, inspectedQ }: Props) {
             <div className="text-[9px] text-muted-foreground">
               {ACTION_NAMES[a as 0 | 1 | 2 | 3]}
             </div>
-            <div>{inspectedQ[a]?.toFixed(2)}</div>
+            <div>{formatNum(inspectedQ[a] ?? 0, 2)}</div>
           </div>
         ))}
       </div>

@@ -61,3 +61,17 @@ export function getGridLookups(store: ReturnType<typeof useRLStore.getState>) {
       : null,
   };
 }
+
+export function formatQ(v: number): string {
+  if (Math.abs(v) < 0.05) return "0.0";
+  return v.toFixed(1);
+}
+
+export function getCellTooltip(
+  r: number,
+  c: number,
+  qValues?: [number, number, number, number],
+): string {
+  if (!qValues) return `(${r},${c})`;
+  return `(${r},${c}) | Q: [↑${formatQ(qValues[0])}, →${formatQ(qValues[1])}, ↓${formatQ(qValues[2])}, ←${formatQ(qValues[3])}]`;
+}

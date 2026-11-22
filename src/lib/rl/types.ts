@@ -128,6 +128,8 @@ export type BanditRunConfig = {
   c: number; // UCB parameter
   initialQ: number;
   alpha?: number; // Constant step-size parameter for optimistic & non-stationary
+  estimator?: "sample-average" | "constant-alpha";
+  lockTestbed?: boolean;
   isStationary: boolean;
   driftStdDev: number;
 };

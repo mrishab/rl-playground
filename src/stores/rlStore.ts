@@ -1,5 +1,11 @@
 import { create } from "zustand";
-import { RLEngine, type QTable, stateKey } from "../lib/rl/rlEngine";
+import {
+  RLEngine,
+  type QTable,
+  stateKey,
+  formatSub,
+  formatNum,
+} from "../lib/rl/rlEngine";
 import type {
   RLEnvironmentRules,
   RLHyperparameters,
@@ -39,6 +45,12 @@ export type RLStoreState = {
   rules: RLEnvironmentRules;
   params: RLHyperparameters;
   qTable: QTable;
+  qTable2?: QTable;
+  mcTrajectory?: {
+    state: [number, number];
+    action: import("../lib/rl/types").Action;
+    reward: number;
+  }[];
   stateVisits: StateVisitTable;
   totalEpisodes: number;
   rewardHistory: number[];
@@ -208,6 +220,8 @@ export const useRLStore = create<RLStoreState>((set, get) => {
     rules: DEFAULT_RULES,
     params: DEFAULT_PARAMS,
     qTable: initialEngine.qTable,
+    qTable2: {},
+    mcTrajectory: [],
     stateVisits: {},
     totalEpisodes: 0,
     rewardHistory: [],
@@ -215,7 +229,7 @@ export const useRLStore = create<RLStoreState>((set, get) => {
     tdHistory: [],
     successCount: 0,
     isSimulating: false,
-    showBFSPath: true,
+    showBFSPath: false,
     showValueHeatmap: true,
     showPolicyArrows: true,
     showQRose: false,
@@ -410,6 +424,7 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           initialSmartObstacles: nextInitial,
           bfsResult,
         });
+        get().resetQTable();
         return;
       }
 
@@ -444,6 +459,7 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           initialSmartObstacles: nextInitial,
           bfsResult,
         });
+        get().resetQTable();
         return;
       }
 
@@ -510,6 +526,7 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
           bfsResult,
         });
+        get().resetQTable();
         return;
       }
 
@@ -542,6 +559,7 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           smartObstacles: nextInitial.map((o) => ({ ...o })),
           bfsResult,
         });
+        get().resetQTable();
         return;
       }
 
@@ -575,6 +593,7 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           initialSmartObstacles: nextInitial,
           bfsResult,
         });
+        get().resetQTable();
         return;
       }
 
@@ -588,6 +607,7 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           obstacles: s.obstacles.filter(([or, oc]) => !(or === r && oc === c)),
           ices: s.ices.filter(([ir, ic]) => !(ir === r && ic === c)),
         });
+        get().resetQTable();
         return;
       }
 
@@ -601,6 +621,7 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           obstacles: s.obstacles.filter(([or, oc]) => !(or === r && oc === c)),
           muds: s.muds.filter(([mr, mc]) => !(mr === r && mc === c)),
         });
+        get().resetQTable();
         return;
       }
 
@@ -638,12 +659,31 @@ export const useRLStore = create<RLStoreState>((set, get) => {
           ),
           bfsResult,
         });
+        get().resetQTable();
       }
     },
 
     trainEpisodes: (count: number) => {
       const s = get();
       const engine = buildEngine(s);
+
+      if (s.params.algorithm === "value-iteration") {
+        let sweepsDone = 0;
+        let lastRes = { delta: 0, converged: false };
+        const maxSweeps = count === 1 ? 1 : Math.max(count, 500);
+        for (let i = 0; i < maxSweeps; i++) {
+          lastRes = engine.runDPSweep();
+          sweepsDone++;
+          if (count > 1 && lastRes.converged) break;
+        }
+        set({
+          qTable: { ...engine.qTable },
+          totalEpisodes: s.totalEpisodes + sweepsDone,
+          lastTransition: engine.lastTransition,
+        });
+        return;
+      }
+
       const results = engine.trainBatch(count);
 
       const newRewards = [...s.rewardHistory];
@@ -713,27 +753,71 @@ export const useRLStore = create<RLStoreState>((set, get) => {
       if (algo === "monte-carlo") {
         const bestAction = engine.chooseAction(r, c);
         const stepRes = engine.step(r, c, bestAction);
-        const { nextPos, reward, isTerminal } = stepRes;
-        const q = engine.getQValues(r, c);
-        const qVal = q[bestAction];
+        const { nextPos, reward } = stepRes;
+        const currentTraj = [
+          ...(s.mcTrajectory || []),
+          { state: [r, c] as [number, number], action: bestAction, reward },
+        ];
+        const isTerminal = stepRes.isTerminal || currentTraj.length >= 100;
+        const qTable = { ...s.qTable };
+        const actionNames = ["Up", "Right", "Down", "Left"];
+
+        let formula = "";
+        const qVal = (qTable[stateKey(r, c)] || [0, 0, 0, 0])[bestAction];
+        let qAfter = qVal;
+        let targetQ = reward;
+
+        if (isTerminal) {
+          let G = 0;
+          let targetQForLastStep = reward;
+          const gamma = s.params.discountFactor;
+          const alpha = s.params.learningRate;
+          const visited = new Set<string>();
+          for (let t = currentTraj.length - 1; t >= 0; t--) {
+            const item = currentTraj[t];
+            G = gamma * G + item.reward;
+            if (t === currentTraj.length - 1) {
+              targetQForLastStep = G;
+            }
+            const sk = stateKey(item.state[0], item.state[1]);
+            const sa = `${sk}:${item.action}`;
+            if (!visited.has(sa)) {
+              visited.add(sa);
+              const qArr = qTable[sk] ? [...qTable[sk]] : [0, 0, 0, 0];
+              const qBeforeVal = qArr[item.action];
+              qArr[item.action] = Number(
+                (qBeforeVal + alpha * (G - qBeforeVal)).toFixed(2),
+              );
+              qTable[sk] = qArr as [number, number, number, number];
+            }
+          }
+          qAfter = (qTable[stateKey(r, c)] || [0, 0, 0, 0])[bestAction];
+          targetQ = targetQForLastStep;
+          formula = `Monte Carlo Terminal: Episode ended (${currentTraj.length} steps). Target G_t = ${targetQForLastStep.toFixed(1)} (G_0 = ${G.toFixed(1)}). Q((${r},${c}),${actionNames[bestAction]}) ← ${formatNum(qVal, 2)} + ${alpha.toFixed(2)} × [${targetQForLastStep.toFixed(1)} ${formatSub(qVal)}] = ${formatNum(qAfter, 2)} (no bootstrapping)`;
+        } else {
+          formula = `Monte Carlo Step: s=(${r},${c}), a=${actionNames[bestAction]}, r=${reward.toFixed(1)}, s'=(${nextPos[0]},${nextPos[1]}) | Buffering trajectory (step ${currentTraj.length}), Q-values wait for terminal G_t`;
+        }
+
         const updatedVisits = {
           ...s.stateVisits,
           [stateKey(r, c)]: (s.stateVisits[stateKey(r, c)] || 0) + 1,
         };
-        const actionNames = ["Up", "Right", "Down", "Left"];
+
         set({
           agentPos: nextPos,
           smartObstacles: engine.smartObstacles,
+          qTable,
           stateVisits: updatedVisits,
+          mcTrajectory: isTerminal ? [] : currentTraj,
           lastTransition: {
             state: [r, c],
             action: bestAction,
             reward,
             nextState: nextPos,
             qBefore: qVal,
-            qAfter: qVal,
-            targetQ: reward,
-            formula: `Monte Carlo Transition: S=(${r},${c}), A=${actionNames[bestAction]}, R=${reward.toFixed(1)}${isTerminal ? " (Terminal - Full Episode Return G_t Evaluated)" : " (Awaiting Episode Return G_t)"}`,
+            qAfter,
+            targetQ,
+            formula,
           },
         });
         return;
@@ -751,10 +835,10 @@ export const useRLStore = create<RLStoreState>((set, get) => {
 
       let targetQ = reward;
       let formula = "";
-      const subStr =
-        qBefore >= 0
-          ? `- ${qBefore.toFixed(2)}`
-          : `+ ${Math.abs(qBefore).toFixed(2)}`;
+      const updatedQTable = { ...engine.qTable };
+      const updatedQTable2 = { ...(s.qTable2 || {}) };
+      let qBeforeLogged = qBefore;
+      let qAfterLogged = q[bestAction];
 
       if (algo === "q-learning") {
         const nextQ = engine.getQValues(nextPos[0], nextPos[1]);
@@ -762,7 +846,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         targetQ = reward + gamma * maxNextQ;
         const td = targetQ - qBefore;
         q[bestAction] += alpha * td;
-        formula = `Q(s,${actionName}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × max(${maxNextQ.toFixed(2)}) ${subStr}] = ${q[bestAction].toFixed(2)}`;
+        updatedQTable[stateKey(r, c)] = q;
+        qAfterLogged = q[bestAction];
+        formula = `Q((${r},${c}),${actionName}) ← ${formatNum(qBefore, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × max Q((${nextPos[0]},${nextPos[1]}))(${formatNum(maxNextQ, 2)}) ${formatSub(qBefore)}] = ${formatNum(q[bestAction], 2)}`;
       } else if (algo === "sarsa") {
         const nextAction = engine.chooseAction(nextPos[0], nextPos[1]);
         const nextQ = engine.getQValues(nextPos[0], nextPos[1]);
@@ -770,7 +856,9 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         targetQ = reward + gamma * nextVal;
         const td = targetQ - qBefore;
         q[bestAction] += alpha * td;
-        formula = `SARSA: Q(s,${actionName}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ${nextVal.toFixed(2)} ${subStr}] = ${q[bestAction].toFixed(2)}`;
+        updatedQTable[stateKey(r, c)] = q;
+        qAfterLogged = q[bestAction];
+        formula = `SARSA: Q((${r},${c}),${actionName}) ← ${formatNum(qBefore, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q((${nextPos[0]},${nextPos[1]}),${actionNames[nextAction]})(${formatNum(nextVal, 2)}) ${formatSub(qBefore)}] = ${formatNum(q[bestAction], 2)}`;
       } else if (algo === "expected-sarsa") {
         const nextQ = engine.getQValues(nextPos[0], nextPos[1]);
         let expectedNext = 0;
@@ -785,17 +873,55 @@ export const useRLStore = create<RLStoreState>((set, get) => {
         targetQ = reward + gamma * expectedNext;
         const td = targetQ - qBefore;
         q[bestAction] += alpha * td;
-        formula = `Expected SARSA: Q(s,${actionName}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ΣπQ(${expectedNext.toFixed(2)}) ${subStr}] = ${q[bestAction].toFixed(2)}`;
+        updatedQTable[stateKey(r, c)] = q;
+        qAfterLogged = q[bestAction];
+        formula = `Expected SARSA: Q((${r},${c}),${actionName}) ← ${formatNum(qBefore, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ΣπQ((${nextPos[0]},${nextPos[1]}))(${formatNum(expectedNext, 2)}) ${formatSub(qBefore)}] = ${formatNum(q[bestAction], 2)}`;
       } else if (algo === "double-q") {
-        const nextQ = engine.getQValues(nextPos[0], nextPos[1]);
-        const maxNextQ = isTerminal ? 0 : Math.max(...nextQ);
-        targetQ = reward + gamma * maxNextQ;
-        const td = targetQ - qBefore;
-        q[bestAction] += alpha * td;
-        formula = `Double Q (Update Q₁): Q₁(s,${actionName}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₂(s',a*)(${maxNextQ.toFixed(2)}) ${subStr}] = ${q[bestAction].toFixed(2)}`;
+        const updateQ1 = Math.random() < 0.5;
+        const q2 = updatedQTable2[stateKey(r, c)]
+          ? [...updatedQTable2[stateKey(r, c)]]
+          : [0, 0, 0, 0];
+        const nextQ1 = engine.getQValues(nextPos[0], nextPos[1]);
+        const nextQ2 = updatedQTable2[stateKey(nextPos[0], nextPos[1])] || [
+          0, 0, 0, 0,
+        ];
+
+        if (updateQ1) {
+          const bestA = engine.getBestAction(nextPos[0], nextPos[1]);
+          const maxNextQ = isTerminal ? 0 : nextQ2[bestA];
+          targetQ = reward + gamma * maxNextQ;
+          const td = targetQ - qBefore;
+          q[bestAction] += alpha * td;
+          updatedQTable[stateKey(r, c)] = q;
+          qBeforeLogged = qBefore;
+          qAfterLogged = q[bestAction];
+          formula = `Double Q (Update Q₁): Q₁((${r},${c}),${actionName}) ← ${formatNum(qBefore, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₂((${nextPos[0]},${nextPos[1]}),a*)(${formatNum(maxNextQ, 2)}) ${formatSub(qBefore)}] = ${formatNum(q[bestAction], 2)}`;
+        } else {
+          let bestA = 0;
+          let maxVal = -Infinity;
+          for (let a = 0; a < 4; a++) {
+            if (q2[a] > maxVal) {
+              maxVal = q2[a];
+              bestA = a;
+            }
+          }
+          const maxNextQ = isTerminal ? 0 : nextQ1[bestA];
+          targetQ = reward + gamma * maxNextQ;
+          const q2Before = q2[bestAction];
+          const td = targetQ - q2Before;
+          q2[bestAction] += alpha * td;
+          updatedQTable2[stateKey(r, c)] = q2 as [
+            number,
+            number,
+            number,
+            number,
+          ];
+          qBeforeLogged = q2Before;
+          qAfterLogged = q2[bestAction];
+          formula = `Double Q (Update Q₂): Q₂((${r},${c}),${actionName}) ← ${formatNum(q2Before, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₁((${nextPos[0]},${nextPos[1]}),a*)(${formatNum(maxNextQ, 2)}) ${formatSub(q2Before)}] = ${formatNum(q2[bestAction], 2)}`;
+        }
       }
 
-      engine.qTable[stateKey(r, c)] = q;
       const updatedVisits = {
         ...s.stateVisits,
         [stateKey(r, c)]: (s.stateVisits[stateKey(r, c)] || 0) + 1,
@@ -804,15 +930,16 @@ export const useRLStore = create<RLStoreState>((set, get) => {
       set({
         agentPos: nextPos,
         smartObstacles: engine.smartObstacles,
-        qTable: engine.qTable,
+        qTable: updatedQTable,
+        qTable2: updatedQTable2,
         stateVisits: updatedVisits,
         lastTransition: {
           state: [r, c],
           action: bestAction,
           reward,
           nextState: nextPos,
-          qBefore,
-          qAfter: q[bestAction],
+          qBefore: qBeforeLogged,
+          qAfter: qAfterLogged,
           targetQ,
           formula,
         },

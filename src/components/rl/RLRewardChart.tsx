@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RLChartMetricToggle, type ChartMetric } from "./RLChartMetricToggle";
 import { RLChartSvg } from "./RLChartSvg";
+import { computeChartPath } from "./rlChartUtils";
 
 interface Props {
   rewards: number[];
@@ -24,15 +25,7 @@ export function RLRewardChart({ rewards, steps = [], tdErrors = [] }: Props) {
     );
   }
 
-  const minVal = Math.min(...data);
-  const maxVal = Math.max(...data);
-  const range = Math.max(1e-4, maxVal - minVal);
-  const points = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * 100;
-    const y = 92 - ((v - minVal) / range) * 84;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const pathD = `M ${points.join(" L ")}`;
+  const { minVal, maxVal, pathD } = computeChartPath(data);
 
   return (
     <Card>

@@ -3,6 +3,7 @@ import { RLStepButtons } from "./RLStepButtons";
 
 interface Props {
   isSimulating: boolean;
+  algorithm?: string;
   onTrain: (episodes: number) => void;
   onStep: () => void;
   onStepTransition?: () => void;
@@ -13,6 +14,7 @@ interface Props {
 
 export function RLControlsActionButtons({
   isSimulating,
+  algorithm,
   onTrain,
   onStep,
   onStepTransition,
@@ -24,6 +26,7 @@ export function RLControlsActionButtons({
     <div className="space-y-2 pt-1">
       <RLTrainBatchButtons
         isSimulating={isSimulating}
+        algorithm={algorithm}
         onTrain={onTrain}
         onToggleSimulate={onToggleSimulate}
       />

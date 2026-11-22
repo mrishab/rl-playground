@@ -25,9 +25,17 @@ export function parseStateKey(key: string): [number, number] {
   return [parseInt(parts[0], 10), parseInt(parts[1], 10)];
 }
 
-function formatSub(val: number): string {
-  if (val >= 0) return `- ${val.toFixed(2)}`;
-  return `+ ${Math.abs(val).toFixed(2)}`;
+export function formatNum(v: number, digits: number = 2): string {
+  if (Math.abs(v) < 0.5 * Math.pow(10, -digits)) {
+    return (0).toFixed(digits);
+  }
+  return v.toFixed(digits);
+}
+
+export function formatSub(val: number): string {
+  if (Math.abs(val) < 0.005) return "- 0.00";
+  if (val < 0) return `+ ${formatNum(Math.abs(val), 2)}`;
+  return `- ${formatNum(val, 2)}`;
 }
 
 export class RLEngine {
@@ -43,7 +51,7 @@ export class RLEngine {
   smartObstacles: SmartObstacle[];
   qTable: QTable = {};
   qTable2: QTable = {}; // For Double Q-Learning (QB)
-  mcCounts: Record<string, number> = {};
+  mcCounts: Map<string, number> = new Map();
   stateVisits: StateVisitTable = {};
   lastTransition: TransitionLog | null = null;
 
@@ -399,7 +407,7 @@ export class RLEngine {
           qBefore,
           qAfter: q[action],
           targetQ,
-          formula: `Q(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × max(${maxNextQ.toFixed(2)}) ${formatSub(qBefore)}] = ${q[action].toFixed(2)}`,
+          formula: `Q((${r},${c}),${ACTION_NAMES[action]}) ← ${formatNum(qBefore, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × max Q((${nextR},${nextC}))(${formatNum(maxNextQ, 2)}) ${formatSub(qBefore)}] = ${formatNum(q[action], 2)}`,
         };
       } else if (this.params.algorithm === "sarsa") {
         const q = this.getQValues(r, c);
@@ -421,7 +429,7 @@ export class RLEngine {
           qBefore,
           qAfter: q[action],
           targetQ,
-          formula: `SARSA: Q(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ${expectedNext.toFixed(2)} ${formatSub(qBefore)}] = ${q[action].toFixed(2)}`,
+          formula: `SARSA: Q((${r},${c}),${ACTION_NAMES[action]}) ← ${formatNum(qBefore, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q((${nextR},${nextC}),${ACTION_NAMES[nextAction]})(${formatNum(expectedNext, 2)}) ${formatSub(qBefore)}] = ${formatNum(q[action], 2)}`,
         };
       } else if (this.params.algorithm === "expected-sarsa") {
         const q = this.getQValues(r, c);
@@ -451,7 +459,7 @@ export class RLEngine {
           qBefore,
           qAfter: q[action],
           targetQ,
-          formula: `Expected SARSA: Q(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ΣπQ(${expectedNext.toFixed(2)}) ${formatSub(qBefore)}] = ${q[action].toFixed(2)}`,
+          formula: `Expected SARSA: Q((${r},${c}),${ACTION_NAMES[action]}) ← ${formatNum(qBefore, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × ΣπQ((${nextR},${nextC}))(${formatNum(expectedNext, 2)}) ${formatSub(qBefore)}] = ${formatNum(q[action], 2)}`,
         };
       } else if (this.params.algorithm === "double-q") {
         // Double Q-Learning: flip a coin to update QA or QB
@@ -478,7 +486,7 @@ export class RLEngine {
             qBefore,
             qAfter: qA[action],
             targetQ,
-            formula: `Double Q (Update Q₁): Q₁(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₂(s',${ACTION_NAMES[bestActionInA]})(${qBNext[bestActionInA].toFixed(2)}) ${formatSub(qBefore)}] = ${qA[action].toFixed(2)}`,
+            formula: `Double Q (Update Q₁): Q₁((${r},${c}),${ACTION_NAMES[action]}) ← ${formatNum(qBefore, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₂((${nextR},${nextC}),${ACTION_NAMES[bestActionInA]})(${formatNum(qBNext[bestActionInA], 2)}) ${formatSub(qBefore)}] = ${formatNum(qA[action], 2)}`,
           };
         } else {
           if (!this.qTable2[key]) this.qTable2[key] = [0, 0, 0, 0];
@@ -510,7 +518,7 @@ export class RLEngine {
             qBefore,
             qAfter: qB[action],
             targetQ,
-            formula: `Double Q (Update Q₂): Q₂(s,${ACTION_NAMES[action]}) ← ${qBefore.toFixed(2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₁(s',${ACTION_NAMES[bestActionInB]})(${qANext[bestActionInB].toFixed(2)}) ${formatSub(qBefore)}] = ${qB[action].toFixed(2)}`,
+            formula: `Double Q (Update Q₂): Q₂((${r},${c}),${ACTION_NAMES[action]}) ← ${formatNum(qBefore, 2)} + ${alpha.toFixed(2)} × [${reward.toFixed(1)} + ${gamma.toFixed(2)} × Q₁((${nextR},${nextC}),${ACTION_NAMES[bestActionInB]})(${formatNum(qANext[bestActionInB], 2)}) ${formatSub(qBefore)}] = ${formatNum(qB[action], 2)}`,
           };
         }
       }
@@ -543,21 +551,22 @@ export class RLEngine {
           visited.add(saKey);
           const q = this.qTable[stepItem.stateKey] || [0, 0, 0, 0];
           const qBefore = q[stepItem.action];
-          this.mcCounts[saKey] = (this.mcCounts[saKey] || 0) + 1;
-          const count = this.mcCounts[saKey];
+          const count = (this.mcCounts.get(saKey) || 0) + 1;
+          this.mcCounts.set(saKey, count);
           const stepSize = 1.0 / count;
           q[stepItem.action] += stepSize * (G - qBefore);
           this.qTable[stepItem.stateKey] = q;
 
+          const st = parseStateKey(stepItem.stateKey);
           this.lastTransition = {
-            state: parseStateKey(stepItem.stateKey),
+            state: st,
             action: stepItem.action,
             reward: stepItem.reward,
             nextState: [0, 0],
             qBefore,
             qAfter: q[stepItem.action],
             targetQ: G,
-            formula: `Monte Carlo: Q(s,${ACTION_NAMES[stepItem.action]}) ← ${qBefore.toFixed(2)} + 1/${count} × [G(${G.toFixed(1)}) ${formatSub(qBefore)}] = ${q[stepItem.action].toFixed(2)}`,
+            formula: `Monte Carlo: Q((${st[0]},${st[1]}),${ACTION_NAMES[stepItem.action]}) ← ${formatNum(qBefore, 2)} + 1/${count} × [G(${G.toFixed(1)}) ${formatSub(qBefore)}] = ${formatNum(q[stepItem.action], 2)}`,
           };
         }
       }
@@ -584,35 +593,49 @@ export class RLEngine {
     };
   }
 
-  // Dynamic Programming: Bellman Optimality Backup across all grid cells
+  // Dynamic Programming: Synchronous Bellman Optimality Backup across all grid cells
   runDPSweep(): { delta: number; converged: boolean } {
     let maxDelta = 0;
     const gamma = this.params.discountFactor;
-    const pSlip = this.rules.slipProbability;
 
     let sampleTransition: TransitionLog | null = null;
+    const nextQTable: Record<string, QActionValues> = {};
 
     for (let r = 0; r < this.numRows; r++) {
       for (let c = 0; c < this.numCols; c++) {
         const key = stateKey(r, c);
-        if (r === this.goalPos[0] && c === this.goalPos[1]) continue;
-        if (this.obstacles.has(key)) continue;
-        if (this.rules.hazardIsTerminal && this.hazards.has(key)) continue;
+        if (r === this.goalPos[0] && c === this.goalPos[1]) {
+          nextQTable[key] = [0, 0, 0, 0];
+          continue;
+        }
+        if (this.obstacles.has(key)) {
+          nextQTable[key] = [0, 0, 0, 0];
+          continue;
+        }
+        if (this.rules.hazardIsTerminal && this.hazards.has(key)) {
+          nextQTable[key] = [0, 0, 0, 0];
+          continue;
+        }
 
         const currentQ = [...this.getQValues(r, c)] as QActionValues;
+        const updatedQ = [...currentQ] as QActionValues;
+        const isIce = this.ices.has(key);
+        const cellSlip = isIce
+          ? Math.max(0.4, this.rules.slipProbability)
+          : this.rules.slipProbability;
 
         for (let a = 0; a < 4; a++) {
           const action = a as Action;
           const outcomes: { act: Action; prob: number }[] = [];
-          if (pSlip > 0) {
-            outcomes.push({ act: action, prob: 1 - pSlip });
+          if (cellSlip > 0) {
+            outcomes.push({ act: action, prob: 1 - cellSlip });
             outcomes.push({
               act: ((action + 1) % 4) as Action,
-              prob: pSlip / 2,
+              prob: cellSlip / 2,
             });
             outcomes.push({
               act: ((action + 3) % 4) as Action,
-              prob: pSlip / 2,
+              prob: cellSlip / 2,
             });
           } else {
             outcomes.push({ act: action, prob: 1.0 });
@@ -635,8 +658,13 @@ export class RLEngine {
               reward = this.rules.stepReward + this.rules.goalReward;
               isTerminal = true;
             } else if (this.hazards.has(stateKey(nextR, nextC))) {
-              reward = this.rules.stepReward + this.rules.hazardPenalty;
-              if (this.rules.hazardIsTerminal) isTerminal = true;
+              reward = this.rules.hazardPenalty;
+              if (this.rules.hazardIsTerminal) {
+                isTerminal = true;
+              } else if (this.rules.cliffReset) {
+                nextR = this.startPos[0];
+                nextC = this.startPos[1];
+              }
             } else if (this.muds.has(stateKey(nextR, nextC))) {
               reward = this.rules.stepReward + (this.rules.mudPenalty ?? -2);
             }
@@ -650,7 +678,7 @@ export class RLEngine {
           const diff = Math.abs(qBefore - expectedValue);
           if (diff > maxDelta) maxDelta = diff;
 
-          currentQ[action] = expectedValue;
+          updatedQ[action] = expectedValue;
 
           if (!sampleTransition || diff > 0.01) {
             sampleTransition = {
@@ -661,13 +689,17 @@ export class RLEngine {
               qBefore,
               qAfter: expectedValue,
               targetQ: expectedValue,
-              formula: `Value Iteration: Q((${r},${c}),${ACTION_NAMES[action]}) ← Σ P(s'|s,a)[R + γ max_{a'} Q(s',a')] = ${expectedValue.toFixed(2)} (slip: ${(pSlip * 100).toFixed(0)}%)`,
+              formula: `Value Iteration: Q((${r},${c}),${ACTION_NAMES[action]}) ← Σ P(s'|s,a)[R + γ max_{a'} Q(s',a')] = ${formatNum(expectedValue, 2)} (slip: ${(cellSlip * 100).toFixed(0)}%)`,
             };
           }
         }
 
-        this.qTable[key] = currentQ;
+        nextQTable[key] = updatedQ;
       }
+    }
+
+    for (const key of Object.keys(nextQTable)) {
+      this.qTable[key] = nextQTable[key];
     }
 
     if (sampleTransition) {

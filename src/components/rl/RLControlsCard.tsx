@@ -40,6 +40,7 @@ export function RLControlsCard({
         <RLControlSliders params={params} onChange={onChange} />
         <RLControlsActionButtons
           isSimulating={isSimulating}
+          algorithm={params.algorithm}
           onTrain={onTrain}
           onStep={onStep}
           onStepTransition={onStepTransition}

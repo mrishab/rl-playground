@@ -531,4 +531,50 @@ describe("RL Store Integration", () => {
         .obstacles.some(([r, c]) => r === startR && c === startC),
     );
   });
+
+  it("should record transition formula with updated qAfter on Monte Carlo terminal step", async () => {
+    const { useRLStore } = await import("../src/stores/rlStore.ts");
+    const store = useRLStore.getState();
+    store.loadPreset("simple");
+    store.setParams({
+      algorithm: "monte-carlo",
+      learningRate: 0.5,
+      explorationRate: 0.0,
+    });
+    store.resetQTable();
+
+    // Step through until terminal state is reached
+    let maxSteps = 50;
+    while (maxSteps-- > 0) {
+      store.stepSingleTransition();
+      const current = useRLStore.getState();
+      if (current.lastTransition?.formula.includes("Monte Carlo Terminal")) {
+        const trans = current.lastTransition;
+        assert.ok(trans.formula.includes("no bootstrapping"));
+        assert.ok(!trans.formula.includes("-0.00"));
+        assert.equal(typeof trans.qAfter, "number");
+        break;
+      }
+    }
+  });
+
+  it("should accurately track qBefore and qAfter in Double Q stepSingleTransition", async () => {
+    const { useRLStore } = await import("../src/stores/rlStore.ts");
+    const store = useRLStore.getState();
+    store.loadPreset("simple");
+    store.setParams({
+      algorithm: "double-q",
+      learningRate: 0.2,
+      explorationRate: 0.1,
+    });
+    store.resetQTable();
+
+    store.stepSingleTransition();
+    const trans = useRLStore.getState().lastTransition;
+    assert.ok(trans !== null);
+    assert.ok(trans.formula.includes("Double Q"));
+    assert.equal(typeof trans.qBefore, "number");
+    assert.equal(typeof trans.qAfter, "number");
+    assert.ok(!trans.formula.includes("-0.00"));
+  });
 });

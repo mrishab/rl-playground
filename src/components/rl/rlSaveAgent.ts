@@ -19,8 +19,16 @@ export function saveCurrentRLAgent(
         store.stepsHistory.length
       : 0;
 
+  const dims =
+    store.gridWidth &&
+    store.gridHeight &&
+    (store.gridWidth !== store.gridSize || store.gridHeight !== store.gridSize)
+      ? `${store.gridWidth}x${store.gridHeight}`
+      : `${store.gridSize}x${store.gridSize}`;
+  const defaultName = `${store.params.algorithm.toUpperCase()} · ${dims} (α=${store.params.learningRate}, ε=${store.params.explorationRate})`;
+
   return saveAgent({
-    name: `${store.params.algorithm.toUpperCase()} Agent (${store.gridSize}x${store.gridSize})`,
+    name: defaultName,
     algorithm: store.params.algorithm,
     algorithmName: store.params.algorithm.toUpperCase(),
     hyperparameters: {
@@ -37,6 +45,8 @@ export function saveCurrentRLAgent(
     },
     gridConfig: {
       gridSize: store.gridSize,
+      gridWidth: store.gridWidth,
+      gridHeight: store.gridHeight,
       startPos: [...store.startPos],
       goalPos: [...store.goalPos],
       hazards: store.hazards.map(([r, c]) => [r, c]),

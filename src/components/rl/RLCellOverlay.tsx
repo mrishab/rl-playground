@@ -7,6 +7,8 @@ interface Props {
   isGoal?: boolean;
 }
 
+const fmt = (v: number) => (Math.abs(v) < 0.5 ? "0" : v.toFixed(0));
+
 export function RLCellOverlay({
   showVisits,
   visits,
@@ -18,23 +20,23 @@ export function RLCellOverlay({
   return (
     <>
       {showVisits && visits !== undefined && visits > 0 && (
-        <span className="absolute bottom-0.5 left-0.5 text-[8px] font-mono text-muted-foreground/90 bg-muted/70 px-0.5 rounded">
+        <span className="absolute bottom-0.5 left-0.5 text-[8px] font-mono text-muted-foreground bg-muted/80 px-0.5 rounded">
           v:{visits}
         </span>
       )}
       {showQRose && qValues && (
-        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 text-[7px] font-mono pointer-events-none p-0.5 text-muted-foreground/80">
+        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 text-[7px] font-mono pointer-events-none p-0.5 text-foreground font-semibold">
           <span className="col-start-2 row-start-1 text-center leading-none">
-            {qValues[0].toFixed(0)}
+            {fmt(qValues[0])}
           </span>
           <span className="col-start-1 row-start-2 text-left leading-none">
-            {qValues[3].toFixed(0)}
+            {fmt(qValues[3])}
           </span>
           <span className="col-start-3 row-start-2 text-right leading-none">
-            {qValues[1].toFixed(0)}
+            {fmt(qValues[1])}
           </span>
           <span className="col-start-2 row-start-3 text-center leading-none">
-            {qValues[2].toFixed(0)}
+            {fmt(qValues[2])}
           </span>
         </div>
       )}

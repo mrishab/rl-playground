@@ -75,9 +75,7 @@ export function findBFSPath(
   };
 
   const safePath = runBFS(true);
-  if (safePath) return safePath;
-  const anyPath = runBFS(false);
-  return anyPath ?? [];
+  return safePath ?? [];
 }
 
 export function simulateBFSAgainstObstacles(
