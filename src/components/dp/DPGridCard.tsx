@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { stateKey } from "@/lib/rl/rlEngine";
 import type { useDPStore } from "@/stores/dpStore";
 import { DPCellButton } from "./DPCellButton";
+import { DPHeatmapLegend } from "./DPHeatmapLegend";
 
 interface Props {
   store: ReturnType<typeof useDPStore.getState>;
@@ -19,7 +20,7 @@ export function DPGridCard({ store, selectedCell, onCellClick }: Props) {
           State Values & Greedy Policy
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center p-4">
+      <CardContent className="flex flex-col items-center justify-center p-4 space-y-3">
         <div
           data-testid="dp-grid-cells"
           className="grid gap-1.5 w-full max-w-sm mx-auto"
@@ -51,6 +52,7 @@ export function DPGridCard({ store, selectedCell, onCellClick }: Props) {
             );
           })}
         </div>
+        <DPHeatmapLegend />
       </CardContent>
     </Card>
   );

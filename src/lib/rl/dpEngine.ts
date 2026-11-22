@@ -165,7 +165,7 @@ export class DPEngine {
           continue;
         }
         if (this.obstacles.has(key)) continue;
-        if (this.rules.hazardIsTerminal && this.hazards.has(key)) {
+        if (this.hazards.has(key)) {
           newValues[key] = 0;
           continue;
         }
@@ -218,7 +218,7 @@ export class DPEngine {
           continue;
         }
         if (this.obstacles.has(key)) continue;
-        if (this.rules.hazardIsTerminal && this.hazards.has(key)) {
+        if (this.hazards.has(key)) {
           newValues[key] = 0;
           continue;
         }
@@ -262,7 +262,7 @@ export class DPEngine {
         const key = stateKey(r, c);
         if (r === this.goalPos[0] && c === this.goalPos[1]) continue;
         if (this.obstacles.has(key)) continue;
-        if (this.rules.hazardIsTerminal && this.hazards.has(key)) continue;
+        if (this.hazards.has(key)) continue;
 
         const oldAct = this.policy[key] ?? 0;
         let maxExpected = -Infinity;
@@ -328,8 +328,7 @@ export class DPEngine {
     const isGoal = r === this.goalPos[0] && c === this.goalPos[1];
     const isObstacle = this.obstacles.has(key);
     const isHazard = this.hazards.has(key);
-    const isTerminalHazard = isHazard && this.rules.hazardIsTerminal;
-    const isTerminal = isGoal || isObstacle || isTerminalHazard;
+    const isTerminal = isGoal || isObstacle || isHazard;
 
     const actionValues: DPStateInspection["actionValues"] = {
       0: { expectedValue: 0, transitions: [] },
@@ -376,10 +375,8 @@ export class DPEngine {
       formula = `Terminal Goal (${r},${c}): Target reached with reward +${this.rules.goalReward}, V(s) = 0.000`;
     } else if (isObstacle) {
       formula = `Obstacle Cell (${r},${c}): Impassable barrier, V(s) = 0.000`;
-    } else if (isTerminalHazard) {
-      formula = `Hazard Pit (${r},${c}): Terminal absorbing state with penalty ${this.rules.hazardPenalty}, V(s) = 0.000`;
     } else if (isHazard) {
-      formula = `Hazard Pit (${r},${c}): Penalty ${this.rules.hazardPenalty}, V(s) = ${currentV.toFixed(3)} (best: ${ACTION_NAMES[bestAction]})`;
+      formula = `Hazard Pit (${r},${c}): Terminal absorbing state with penalty ${this.rules.hazardPenalty}, V(s) = 0.000`;
     }
 
     return {

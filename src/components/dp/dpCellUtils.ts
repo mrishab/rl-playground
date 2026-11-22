@@ -15,3 +15,16 @@ export function getDPCellStyles(r: number, c: number, isSelected: boolean) {
     : "hover:bg-muted/40";
   return { isGoal, isObstacle, isHazard, role, select };
 }
+
+export function getDPValueBg(
+  v: number,
+  isBlocked: boolean,
+): string | undefined {
+  if (isBlocked || Math.abs(v) < 0.001) return undefined;
+  if (v > 0) {
+    const intensity = Math.min(0.35, Math.max(0.08, (v / 8) * 0.35));
+    return `hsl(var(--success) / ${intensity.toFixed(2)})`;
+  }
+  const intensity = Math.min(0.35, Math.max(0.08, (Math.abs(v) / 8) * 0.35));
+  return `hsl(var(--destructive) / ${intensity.toFixed(2)})`;
+}

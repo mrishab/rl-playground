@@ -1,5 +1,5 @@
 import { ACTION_ARROWS, type Action } from "@/lib/rl/types";
-import { getDPCellStyles } from "./dpCellUtils";
+import { getDPCellStyles, getDPValueBg } from "./dpCellUtils";
 
 interface Props {
   r: number;
@@ -23,17 +23,16 @@ export function DPCellButton({
     c,
     isSelected,
   );
-  const bg =
-    !isObstacle && !isGoal && !isHazard && v !== 0
-      ? `hsl(var(--primary) / ${Math.min(0.3, Math.abs(v) / 15)})`
-      : undefined;
+  const bg = getDPValueBg(v, isObstacle || isGoal || isHazard);
   const label = isGoal
     ? "GOAL"
     : isObstacle
       ? "WALL"
       : isHazard
         ? "PIT"
-        : v.toFixed(2);
+        : Math.abs(v) < 0.005
+          ? "0.00"
+          : v.toFixed(2);
 
   return (
     <button

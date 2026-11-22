@@ -27,8 +27,8 @@ export function DPControlsCard({ store }: Props) {
           </div>
           <Slider
             value={[store.gamma]}
-            min={0.1}
-            max={0.99}
+            min={0.0}
+            max={1.0}
             step={0.01}
             onValueChange={([val]) => store.setGamma(val ?? store.gamma)}
           />
@@ -42,6 +42,7 @@ export function DPControlsCard({ store }: Props) {
         />
         <DPControlsButtons
           algorithm={store.algorithm}
+          isConverged={store.isConverged}
           onStep={store.stepSweep}
           onRunConvergence={store.runToConvergence}
           onReset={store.reset}
