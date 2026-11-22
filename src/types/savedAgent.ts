@@ -26,6 +26,8 @@ export type SavedRLAgent = {
   };
   gridConfig: {
     gridSize: number;
+    gridWidth?: number;
+    gridHeight?: number;
     startPos: [number, number];
     goalPos: [number, number];
     hazards: [number, number][];

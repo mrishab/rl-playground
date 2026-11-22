@@ -14,11 +14,12 @@ export function AgentRenameEditor({ name, onChange, onSave, onCancel }: Props) {
     <div className="flex items-center gap-1 w-full">
       <Input
         value={name}
+        maxLength={40}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
-            onSave();
+            if (name.trim()) onSave();
           } else if (e.key === "Escape") {
             e.preventDefault();
             onCancel();
@@ -31,6 +32,7 @@ export function AgentRenameEditor({ name, onChange, onSave, onCancel }: Props) {
         size="sm"
         variant="ghost"
         className="h-7 w-7 p-0"
+        disabled={!name.trim()}
         onClick={onSave}
       >
         <Check className="h-3.5 w-3.5" />

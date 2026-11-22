@@ -30,8 +30,10 @@ export function AgentCardHeader({ agent, onRename }: Props) {
             onCancel={() => setIsEditing(false)}
           />
         ) : (
-          <div className="flex items-center gap-1.5 font-semibold text-sm">
-            <span>{agent.name}</span>
+          <div className="flex items-center gap-1.5 font-semibold text-sm min-w-0">
+            <span className="truncate max-w-[180px]" title={agent.name}>
+              {agent.name}
+            </span>
             <button
               type="button"
               onClick={() => {

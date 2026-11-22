@@ -34,9 +34,12 @@ export function loadAgentIntoRL(
     []
   ).map((o) => ({ ...o }));
 
+  const gridWidth = cfg.gridWidth ?? cfg.gridSize;
+  const gridHeight = cfg.gridHeight ?? cfg.gridSize;
+
   const restoredRules = agent.rules
-    ? { ...agent.rules, gridSize: cfg.gridSize }
-    : { ...rl.rules, gridSize: cfg.gridSize };
+    ? { ...agent.rules, gridSize: cfg.gridSize, gridWidth, gridHeight }
+    : { ...rl.rules, gridSize: cfg.gridSize, gridWidth, gridHeight };
 
   const bfs = simulateBFSAgainstObstacles(
     cfg.gridSize,
@@ -45,6 +48,8 @@ export function loadAgentIntoRL(
     cfg.obstacles,
     initialSmart,
     cfg.hazards,
+    gridWidth,
+    gridHeight,
   );
 
   const totalEpisodes = agent.metrics.totalEpisodes;
@@ -54,6 +59,8 @@ export function loadAgentIntoRL(
 
   useRLStore.setState({
     gridSize: cfg.gridSize,
+    gridWidth,
+    gridHeight,
     startPos: [...cfg.startPos],
     agentPos: [...cfg.startPos],
     goalPos: [...cfg.goalPos],
