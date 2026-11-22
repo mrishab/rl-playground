@@ -728,4 +728,96 @@ describe("Autonomous Car Continuous Track RL Engine", () => {
     assert.equal(engine.villainErrorRate, 0.1);
     assert.equal(engine.state.villainErrorRate, 0.1);
   });
+
+  it("verifies villain cars maintain proper road clearance and do not hit track boundaries across 500 steps", () => {
+    const engine = new ContinuousCarEngine();
+    // Test across various villain error rates (0%, 20%, 50%)
+    for (const rate of [0, 0.2, 0.5]) {
+      engine.setVillainErrorRate(rate);
+      for (let s = 0; s < 500; s++) {
+        engine.stepVillains();
+        for (const v of engine.state.villains) {
+          const r = Math.hypot(v.x - engine.centerX, v.y - engine.centerY);
+          assert.ok(
+            r > engine.innerRadius + 6.0,
+            `Villain ${v.name} came too close to inner barrier (r=${r.toFixed(2)}, limit=${engine.innerRadius + 6.0})`,
+          );
+          assert.ok(
+            r < engine.outerRadius - 6.0,
+            `Villain ${v.name} came too close to outer barrier (r=${r.toFixed(2)}, limit=${engine.outerRadius - 6.0})`,
+          );
+        }
+      }
+    }
+  });
+
+  it("verifies villain cars remain within road boundaries when recovering from tactical side bumps", () => {
+    const engine = new ContinuousCarEngine();
+    for (const villain of engine.state.villains) {
+      // Simulate tactical side bump displacing villain towards track barrier
+      villain.x = engine.state.x + 4;
+      villain.y = engine.state.y + 4;
+      villain.angle = 0;
+      engine.step(0); // Trigger bump
+
+      // Step villains for 50 recovery steps
+      for (let s = 0; s < 50; s++) {
+        engine.stepVillains();
+        const r = Math.hypot(
+          villain.x - engine.centerX,
+          villain.y - engine.centerY,
+        );
+        assert.ok(
+          r >= engine.innerRadius + 6.0,
+          `Villain ${villain.name} hit inner barrier after bump (r=${r.toFixed(2)})`,
+        );
+        assert.ok(
+          r <= engine.outerRadius - 6.0,
+          `Villain ${villain.name} hit outer barrier after bump (r=${r.toFixed(2)})`,
+        );
+      }
+    }
+  });
+
+  it("verifies villain heading deflection steers toward target lane rather than into barriers on contact", () => {
+    const engine = new ContinuousCarEngine();
+    const v1 = engine.state.villains[0];
+    // Position contact: villain is outside its target radius (r=80 > targetRadius 78)
+    v1.x = engine.centerX;
+    v1.y = engine.centerY - 80;
+    v1.angle = 0; // heading East
+    v1.speed = 4.0;
+    engine.state.x = engine.centerX + 5;
+    engine.state.y = engine.centerY - 80;
+    engine.state.angle = 0;
+    engine.state.speed = 2.0;
+
+    const angleBefore = v1.angle;
+    engine.handleCarBumps();
+
+    // Since v1 was at radius 80 > targetRadius 78, angle must increase (steer inward toward center)
+    assert.ok(
+      v1.angle > angleBefore,
+      "Villain outside target radius must steer inward toward target lane on bump contact",
+    );
+  });
+
+  it("verifies villain cars maintain higher angular speed than agent car on open track", () => {
+    const engine = new ContinuousCarEngine();
+    const agentCruisingSpeed = 2.85;
+    const agentCenterlineOmega = agentCruisingSpeed / 67.5;
+    const agentInsideLineOmega = agentCruisingSpeed / 61.5;
+
+    for (const v of engine.state.villains) {
+      const villainOmega = v.baseSpeed / v.targetRadius;
+      assert.ok(
+        villainOmega > agentCenterlineOmega,
+        `Villain ${v.name} angular speed (${villainOmega.toFixed(4)}) must exceed agent centerline angular speed (${agentCenterlineOmega.toFixed(4)})`,
+      );
+      assert.ok(
+        villainOmega >= agentInsideLineOmega,
+        `Villain ${v.name} angular speed (${villainOmega.toFixed(4)}) must exceed or match agent inside line angular speed (${agentInsideLineOmega.toFixed(4)})`,
+      );
+    }
+  });
 });

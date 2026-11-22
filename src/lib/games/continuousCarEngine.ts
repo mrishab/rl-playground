@@ -98,7 +98,7 @@ export class ContinuousCarEngine {
         name: "Red Phantom",
         color: "#ef4444",
         targetRadius: 78,
-        baseSpeed: 3.5,
+        baseSpeed: 3.62,
         startProgress: 0.97,
         lapCount: -1,
       },
@@ -364,16 +364,13 @@ export class ContinuousCarEngine {
   stepVillains(): void {
     const s = this.state;
     for (const v of s.villains) {
-      // Check for villain error (10% default configurable)
+      // Check for villain error (configurable error rate)
       if (!v.isError && Math.random() < this.villainErrorRate * 0.04) {
         v.isError = true;
         v.errorTimer = 6;
         v.isSkidding = true;
-        if (Math.random() < 0.5) {
-          v.angle += Math.random() > 0.5 ? 0.2 : -0.2;
-        } else {
-          v.speed = Math.max(2.95, v.speed * 0.88);
-        }
+        v.angle += (Math.random() > 0.5 ? 1 : -1) * 0.15;
+        v.speed = Math.max(2.95, v.speed * 0.88);
       }
 
       if (v.errorTimer > 0) {
@@ -394,7 +391,19 @@ export class ContinuousCarEngine {
       const currentR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
       const rDiff = currentR - v.targetRadius;
       const curvatureFeedforward = v.speed / v.targetRadius;
-      const steer = curvatureFeedforward + diff * 0.5 + (rDiff / 8.0) * 0.15;
+
+      // Soft barrier boundary repulsion: prevent ever getting close to edge of road
+      let barrierBias = 0;
+      const innerMargin = currentR - this.innerRadius;
+      const outerMargin = this.outerRadius - currentR;
+      if (innerMargin < 10) {
+        barrierBias -= ((10 - innerMargin) / 10) * 0.2;
+      } else if (outerMargin < 10) {
+        barrierBias += ((10 - outerMargin) / 10) * 0.2;
+      }
+
+      const steer =
+        curvatureFeedforward + diff * 0.5 + (rDiff / 8.0) * 0.15 + barrierBias;
 
       v.angle += Math.max(-0.25, Math.min(0.25, steer));
       // Normalize angle
@@ -409,9 +418,12 @@ export class ContinuousCarEngine {
       v.x += Math.cos(v.angle) * v.speed;
       v.y += Math.sin(v.angle) * v.speed;
 
-      // Keep within track limits
+      // Safety enforcement: keep within track limits and deflect heading away from barrier
       const updatedR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
-      if (updatedR < this.innerRadius + 6 || updatedR > this.outerRadius - 6) {
+      if (
+        updatedR < this.innerRadius + 6.5 ||
+        updatedR > this.outerRadius - 6.5
+      ) {
         const clampedR = Math.max(
           this.innerRadius + 8,
           Math.min(this.outerRadius - 8, updatedR),
@@ -419,6 +431,14 @@ export class ContinuousCarEngine {
         const curAngle = Math.atan2(v.y - this.centerY, v.x - this.centerX);
         v.x = this.centerX + Math.cos(curAngle) * clampedR;
         v.y = this.centerY + Math.sin(curAngle) * clampedR;
+
+        // Redirect heading along tangent away from barrier
+        const safeTangent = curAngle + Math.PI / 2;
+        if (updatedR < this.innerRadius + 6.5) {
+          v.angle = safeTangent - 0.08;
+        } else {
+          v.angle = safeTangent + 0.08;
+        }
       }
 
       // Lap tracking
@@ -471,7 +491,7 @@ export class ContinuousCarEngine {
           s.speed = Math.max(1.2, s.speed * 0.82);
           v.speed = Math.max(2.95, v.speed * 0.88);
           const currentR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
-          v.angle += v.targetRadius < currentR ? -0.1 : 0.1;
+          v.angle += v.targetRadius < currentR ? 0.1 : -0.1;
           s.lossOfControl = 0.35;
           s.isSkidding = true;
           bumpReward -= 3.5;
@@ -520,14 +540,34 @@ export class ContinuousCarEngine {
             };
           } else {
             // Tactical side bump: destabilize villain or force off racing line into spin/deceleration
-            v.speed = Math.max(0.9, v.speed * 0.45);
+            v.speed = Math.max(0.9, v.speed * 0.42);
             const spinSign = rxA * nx + ryA * ny >= 0 ? 1 : -1;
-            v.angle += spinSign * 0.55;
+            v.angle += spinSign * 0.5;
             v.isError = true;
             v.errorTimer = 18;
             v.isSkidding = true;
-            v.x += nx * 5;
-            v.y += ny * 5;
+            v.x += nx * 3;
+            v.y += ny * 3;
+
+            // Keep villain within track limits after tactical bump
+            const vR = Math.hypot(v.x - this.centerX, v.y - this.centerY);
+            if (vR < this.innerRadius + 7 || vR > this.outerRadius - 7) {
+              const clampedVR = Math.max(
+                this.innerRadius + 8,
+                Math.min(this.outerRadius - 8, vR),
+              );
+              const curAngleV = Math.atan2(
+                v.y - this.centerY,
+                v.x - this.centerX,
+              );
+              v.x = this.centerX + Math.cos(curAngleV) * clampedVR;
+              v.y = this.centerY + Math.sin(curAngleV) * clampedVR;
+              const safeTangentV = curAngleV + Math.PI / 2;
+              v.angle =
+                vR < this.innerRadius + 7
+                  ? safeTangentV - 0.08
+                  : safeTangentV + 0.08;
+            }
 
             if (s.isBoosting) {
               s.isBoosting = false;
@@ -555,6 +595,23 @@ export class ContinuousCarEngine {
         s.y -= ny * overlap * 0.5;
         v.x += nx * overlap * 0.5;
         v.y += ny * overlap * 0.5;
+
+        // Ensure villain stays within track limits after separation
+        const vDist = Math.hypot(v.x - this.centerX, v.y - this.centerY);
+        if (vDist < this.innerRadius + 7 || vDist > this.outerRadius - 7) {
+          const clampedVDist = Math.max(
+            this.innerRadius + 8,
+            Math.min(this.outerRadius - 8, vDist),
+          );
+          const vSepAngle = Math.atan2(v.y - this.centerY, v.x - this.centerX);
+          v.x = this.centerX + Math.cos(vSepAngle) * clampedVDist;
+          v.y = this.centerY + Math.sin(vSepAngle) * clampedVDist;
+          const safeSepTangent = vSepAngle + Math.PI / 2;
+          v.angle =
+            vDist < this.innerRadius + 7
+              ? safeSepTangent - 0.08
+              : safeSepTangent + 0.08;
+        }
       }
     }
 
