@@ -23,6 +23,9 @@ export class BanditEngine {
       epsilon: config?.epsilon ?? 0.1,
       c: config?.c ?? 2.0,
       initialQ: config?.initialQ ?? 0.0,
+      alpha: config?.alpha ?? 0.1,
+      estimator: config?.estimator ?? "sample-average",
+      lockTestbed: config?.lockTestbed ?? false,
       isStationary: config?.isStationary ?? true,
       driftStdDev: config?.driftStdDev ?? 0.01,
     };
@@ -183,13 +186,19 @@ export class BanditEngine {
     const isOptimal = chosenArmIdx === optimalArmIdx;
     if (isOptimal) this.optimalActionPicks++;
 
-    // Step size: constant alpha for optimistic-initial & non-stationary; 1/n for sample-average
+    // Step size: constant alpha for optimistic-initial & non-stationary when configured; 1/n for sample-average
     arm.pulls++;
-    const useConstantAlpha =
-      this.config.alpha !== undefined
-        ? true
-        : this.config.algorithm === "optimistic-initial" ||
-          !this.config.isStationary;
+    const estimator = this.config.estimator;
+    let useConstantAlpha = false;
+    if (this.config.algorithm === "optimistic-initial") {
+      useConstantAlpha = true;
+    } else if (estimator === "constant-alpha") {
+      useConstantAlpha = true;
+    } else if (estimator === "sample-average") {
+      useConstantAlpha = false;
+    } else {
+      useConstantAlpha = this.config.alpha !== undefined;
+    }
     const alpha = this.config.alpha ?? 0.1;
     const stepSize = useConstantAlpha ? alpha : 1.0 / arm.pulls;
     arm.estimatedValue += stepSize * (reward - arm.estimatedValue);

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BanditArm } from "@/lib/rl/types";
-import { BanditMetricTile } from "./BanditMetricTile";
+import { BanditMetricsGrid } from "./BanditMetricsGrid";
 
 interface Props {
   stepCount: number;
@@ -25,22 +25,12 @@ export function BanditMetricsCard({
         <CardTitle className="text-base">Performance Metrics</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-2 text-center">
-          <BanditMetricTile label="Steps" value={stepCount} />
-          <BanditMetricTile
-            label="Optimal Arm %"
-            value={`${optimalRate.toFixed(1)}%`}
-            highlight
-          />
-          <BanditMetricTile
-            label="Avg Reward"
-            value={averageReward.toFixed(2)}
-          />
-          <BanditMetricTile
-            label="Total Reward"
-            value={cumulativeReward.toFixed(1)}
-          />
-        </div>
+        <BanditMetricsGrid
+          stepCount={stepCount}
+          optimalRate={optimalRate}
+          averageReward={averageReward}
+          cumulativeReward={cumulativeReward}
+        />
         <div className="text-[11px] text-muted-foreground pt-1 border-t">
           Optimal Arm:{" "}
           <span className="font-semibold text-foreground font-mono">

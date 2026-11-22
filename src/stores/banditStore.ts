@@ -23,6 +23,8 @@ export type BanditStoreState = {
   setAlgorithm: (algorithm: BanditAlgorithm) => void;
   setConfig: (patch: Partial<BanditRunConfig>) => void;
   reset: () => void;
+  regenerateTestbed: () => void;
+  setLockTestbed: (lock: boolean) => void;
   setIsRunning: (running: boolean) => void;
 };
 
@@ -32,6 +34,9 @@ const DEFAULT_CONFIG: BanditRunConfig = {
   epsilon: 0.1,
   c: 2.0,
   initialQ: 0.0,
+  alpha: 0.1,
+  estimator: "sample-average",
+  lockTestbed: false,
   isStationary: true,
   driftStdDev: 0.01,
 };
@@ -118,7 +123,16 @@ export const useBanditStore = create<BanditStoreState>((set, get) => ({
       (patch.numArms !== undefined && patch.numArms !== current.numArms);
 
     if (requiresReset) {
+      const savedMeans = nextConfig.lockTestbed
+        ? engine.arms.map((a) => a.trueMean)
+        : null;
       engine = new BanditEngine(nextConfig);
+      if (savedMeans && savedMeans.length === engine.arms.length) {
+        for (let i = 0; i < engine.arms.length; i++) {
+          engine.arms[i].trueMean = savedMeans[i];
+        }
+        engine.updateArmStats();
+      }
       set({
         config: nextConfig,
         arms: [...engine.arms],
@@ -146,11 +160,39 @@ export const useBanditStore = create<BanditStoreState>((set, get) => ({
     }
   },
 
+  setLockTestbed: (lockTestbed: boolean) => {
+    get().setConfig({ lockTestbed });
+  },
+
+  regenerateTestbed: () => {
+    const cfg = { ...get().config, lockTestbed: false };
+    engine = new BanditEngine(cfg);
+    set({
+      config: cfg,
+      arms: [...engine.arms],
+      stepCount: 0,
+      cumulativeReward: 0,
+      averageReward: 0,
+      optimalRate: 0,
+      history: [],
+      isRunning: false,
+    });
+  },
+
   reset: () => {
+    const savedMeans = get().config.lockTestbed
+      ? engine.arms.map((a) => a.trueMean)
+      : null;
     if (get().config.algorithm !== "optimistic-initial") {
       engine.config.initialQ = 0.0;
     }
     engine.reset();
+    if (savedMeans && savedMeans.length === engine.arms.length) {
+      for (let i = 0; i < engine.arms.length; i++) {
+        engine.arms[i].trueMean = savedMeans[i];
+      }
+      engine.updateArmStats();
+    }
     set({
       arms: [...engine.arms],
       stepCount: 0,

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BanditArm } from "@/lib/rl/types";
 import { BanditArmCard } from "./BanditArmCard";
+import { BanditTestbedLegend } from "./BanditTestbedLegend";
 
 interface Props {
   arms: BanditArm[];
@@ -15,19 +16,24 @@ export function BanditTestbedCard({
   algorithm,
   onPull,
 }: Props) {
+  const domainMax = Math.max(
+    3,
+    ...arms.map((a) =>
+      Math.max(Math.abs(a.estimatedValue), Math.abs(a.trueMean)),
+    ),
+  );
+
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-1.5 pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-1">
           <CardTitle className="text-sm font-semibold">
-            10-Armed Testbed Values
+            10-Armed Testbed
           </CardTitle>
-          <span className="text-[11px] text-muted-foreground">
-            Click any arm card for manual pull
-          </span>
+          <BanditTestbedLegend />
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-1">
         <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-2">
           {arms.map((arm) => (
             <BanditArmCard
@@ -35,6 +41,7 @@ export function BanditTestbedCard({
               arm={arm}
               isOptimal={arm.id === optimalIdx}
               algorithm={algorithm}
+              domainMax={domainMax}
               onPull={onPull}
             />
           ))}

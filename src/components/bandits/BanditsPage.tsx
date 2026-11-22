@@ -13,9 +13,7 @@ export function BanditsPage() {
 
   useEffect(() => {
     if (!animating) return;
-    const interval = setInterval(() => {
-      useBanditStore.getState().step();
-    }, 80);
+    const interval = setInterval(() => useBanditStore.getState().step(), 80);
     return () => clearInterval(interval);
   }, [animating]);
 
