@@ -109,7 +109,27 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
   },
 
   setActiveGame: (activeGame) => {
-    set({ activeGame, isPlaying: false });
+    pong.setController("rl");
+    pacman.setController("rl");
+    chess.setController("rl");
+    strategy.setController("rl");
+    iceMaze.setController("rl");
+    slotMachine.setController("rl");
+    lemonade.setController("rl");
+    continuousCar.setController("rl");
+    set({
+      activeGame,
+      isPlaying: false,
+      controllerMode: "rl",
+      pongState: { ...pong.state },
+      pacmanState: { ...pacman.state },
+      chessState: { ...chess.state },
+      strategyState: { ...strategy.state },
+      iceMazeState: { ...iceMaze.state },
+      slotMachineState: { ...slotMachine.state },
+      lemonadeState: { ...lemonade.state },
+      continuousCarState: { ...continuousCar.state },
+    });
   },
 
   setControllerMode: (controllerMode) => {
@@ -377,11 +397,10 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       const { reward } = slotMachine.step();
       set((s) => {
         const m = s.metrics["slot-machine"];
-        const isPull = slotMachine.state.totalPulls > m.episodes;
-        const newEpisodes = isPull ? slotMachine.state.totalPulls : m.episodes;
-        const newWins = isPull && reward > 0 ? m.wins + 1 : m.wins;
-        const newLosses = isPull && reward <= 0 ? m.losses + 1 : m.losses;
-        const winRate = newEpisodes > 0 ? (newWins / newEpisodes) * 100 : 0;
+        const totalPulls = slotMachine.state.totalPulls;
+        const totalWins = slotMachine.arms.reduce((sum, a) => sum + a.wins, 0);
+        const totalLosses = Math.max(0, totalPulls - totalWins);
+        const winRate = totalPulls > 0 ? (totalWins / totalPulls) * 100 : 0;
         const newScore = Math.round(slotMachine.state.bankroll);
         return {
           slotMachineState: { ...slotMachine.state },
@@ -389,13 +408,16 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
             ...s.metrics,
             "slot-machine": {
               ...m,
-              episodes: newEpisodes,
-              wins: newWins,
-              losses: newLosses,
+              episodes: totalPulls,
+              wins: totalWins,
+              losses: totalLosses,
               score: newScore,
               highScore: Math.max(m.highScore, newScore),
               winRate,
-              recentRewards: [...m.recentRewards.slice(-19), reward],
+              recentRewards:
+                totalPulls > m.episodes
+                  ? [...m.recentRewards.slice(-19), reward]
+                  : m.recentRewards,
               qTableSize: 4,
             },
           },
@@ -607,26 +629,30 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       const res = slotMachine.trainBatch(episodes);
       set((s) => {
         const m = s.metrics["slot-machine"];
-        const totalEps = m.episodes + res.episodes;
-        const totalWins = m.wins + res.wins;
+        const totalPulls = slotMachine.state.totalPulls;
+        const totalWins = slotMachine.arms.reduce((sum, a) => sum + a.wins, 0);
+        const totalLosses = Math.max(0, totalPulls - totalWins);
+        const winRate = totalPulls > 0 ? (totalWins / totalPulls) * 100 : 0;
         return {
           slotMachineState: { ...slotMachine.state },
           metrics: {
             ...s.metrics,
             "slot-machine": {
               ...m,
-              episodes: totalEps,
+              episodes: totalPulls,
               wins: totalWins,
-              losses: m.losses + (res.episodes - res.wins),
-              winRate: totalEps > 0 ? (totalWins / totalEps) * 100 : 0,
+              losses: totalLosses,
+              winRate,
               score: Math.round(slotMachine.state.bankroll),
               highScore: Math.max(
                 m.highScore,
                 Math.round(slotMachine.state.bankroll),
               ),
               avgReward:
-                (m.avgReward * m.episodes + res.avgReward * res.episodes) /
-                totalEps,
+                totalPulls > 0
+                  ? (m.avgReward * m.episodes + res.avgReward * res.episodes) /
+                    totalPulls
+                  : 0,
               qTableSize: 4,
             },
           },
@@ -712,7 +738,13 @@ export const useGamesStore = create<GamesStoreState>((set, get) => ({
       set({ iceMazeState: { ...iceMaze.state } });
     } else if (activeGame === "slot-machine") {
       slotMachine.resetEpisode();
-      set({ slotMachineState: { ...slotMachine.state } });
+      set((s) => ({
+        slotMachineState: { ...slotMachine.state },
+        metrics: {
+          ...s.metrics,
+          "slot-machine": { ...DEFAULT_METRIC },
+        },
+      }));
     } else if (activeGame === "lemonade") {
       lemonade.resetEpisode();
       set({ lemonadeState: { ...lemonade.state } });

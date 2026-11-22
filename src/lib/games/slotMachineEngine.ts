@@ -18,7 +18,7 @@ const INITIAL_ARMS: SlotMachineArm[] = [
     pulls: 0,
     wins: 0,
     estimatedQ: 0,
-    trueEV: 1.1, // 0.55 * 2
+    trueEV: 1.1, // 0.55 * 2 gross payout EV (+$0.10 net profit EV)
   },
   {
     id: 1,
@@ -30,7 +30,7 @@ const INITIAL_ARMS: SlotMachineArm[] = [
     pulls: 0,
     wins: 0,
     estimatedQ: 0,
-    trueEV: 1.4, // 0.35 * 4
+    trueEV: 1.4, // 0.35 * 4 gross payout EV (+$0.40 net profit EV)
   },
   {
     id: 2,
@@ -42,7 +42,7 @@ const INITIAL_ARMS: SlotMachineArm[] = [
     pulls: 0,
     wins: 0,
     estimatedQ: 0,
-    trueEV: 2.0, // 0.20 * 10 (Highest EV!)
+    trueEV: 2.0, // 0.20 * 10 gross payout EV (+$1.00 net profit EV - Highest!)
   },
   {
     id: 3,
@@ -54,7 +54,7 @@ const INITIAL_ARMS: SlotMachineArm[] = [
     pulls: 0,
     wins: 0,
     estimatedQ: 0,
-    trueEV: 1.0, // 0.04 * 25 (High single prize, low long-term EV!)
+    trueEV: 1.0, // 0.04 * 25 gross payout EV ($0.00 net profit EV)
   },
 ];
 
@@ -102,17 +102,22 @@ export class SlotMachineEngine {
   resetEpisode(): void {
     this.state.isOver = false;
     this.state.bankroll = 100;
+    this.state.totalPulls = 0;
     this.state.lastPayout = 0;
     this.state.lastReward = 0;
+    this.state.reels = ["🍒", "7️⃣", "💎"];
+    this.armPullsCount = [0, 0, 0, 0];
+    for (let i = 0; i < this.arms.length; i++) {
+      this.arms[i].pulls = 0;
+      this.arms[i].wins = 0;
+      this.arms[i].estimatedQ = Number(this.qValues[i].toFixed(2));
+    }
+    this.state.machines = this.arms.map((a) => ({ ...a }));
   }
 
   resetAll(): void {
     this.qValues = [0, 0, 0, 0];
-    this.armPullsCount = [0, 0, 0, 0];
-    this.arms = INITIAL_ARMS.map((a) => ({ ...a }));
-    const controller = this.state.controller;
-    this.state = this.createInitialState();
-    this.state.controller = controller;
+    this.resetEpisode();
   }
 
   selectArmRL(explore = true): number {
@@ -189,10 +194,11 @@ export class SlotMachineEngine {
     arm.pulls += 1;
     this.armPullsCount[chosenArm] += 1;
 
-    // Running sample average Q-update
+    // Running sample average Q-update on net profit reward
     if (s.controller === "rl") {
       const stepSize = this.hyperparams.learningRate;
-      this.qValues[chosenArm] += stepSize * (payout - this.qValues[chosenArm]);
+      this.qValues[chosenArm] +=
+        stepSize * (netReward - this.qValues[chosenArm]);
       arm.estimatedQ = Number(this.qValues[chosenArm].toFixed(2));
     }
 

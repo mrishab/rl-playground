@@ -37,8 +37,10 @@ export function LemonadePolicyTable({ policy, activeWeather }: Props) {
               <div className="font-semibold text-foreground text-[10px]">
                 {type}
               </div>
-              <div className="text-success font-bold">{prepped}c</div>
-              <div className="text-[9px] text-muted-foreground">30c</div>
+              <div className="text-success font-bold text-[10px]">
+                {prepped} cups
+              </div>
+              <div className="text-[9px] text-muted-foreground">30 cups</div>
             </div>
           );
         })}

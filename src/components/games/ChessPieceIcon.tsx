@@ -1,3 +1,4 @@
+import { ChessPieceGlyph } from "./ChessPieceGlyph";
 import type { ChessPieceColor, ChessPieceType } from "@/lib/games/types";
 
 interface Props {
@@ -8,58 +9,20 @@ interface Props {
 
 export function ChessPieceIcon({ type, color, className = "w-7 h-7" }: Props) {
   const isWhite = color === "w";
-  const fill = isWhite ? "rgba(255,255,255,0.25)" : "currentColor";
-  const colorClass = isWhite
-    ? "text-primary drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
-    : "text-destructive drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]";
+  const fill = isWhite ? "hsl(var(--card))" : "hsl(var(--foreground))";
+  const stroke = isWhite ? "hsl(var(--primary))" : "hsl(var(--background))";
 
   return (
     <svg
       viewBox="0 0 24 24"
       fill={fill}
-      stroke="currentColor"
+      stroke={stroke}
       strokeWidth={1.8}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`${colorClass} ${className} shrink-0 select-none`}
+      className={`${className} shrink-0 select-none drop-shadow-xs`}
     >
-      {type === "P" && (
-        <>
-          <path d="M6 20h12M7.5 18h9l-1.5-6h-6L7.5 18z" />
-          <circle cx="12" cy="7.5" r="3.2" />
-        </>
-      )}
-      {type === "R" && (
-        <path d="M5 20h14M6 18h12V10l-1-1V6h-2v2h-2V6h-2v2H7V6H5v3l-1 1v8h2z" />
-      )}
-      {type === "B" && (
-        <>
-          <path d="M12 4a3.5 3.5 0 0 0-3.5 3.5c0 1.5.8 2.8 2 3.5L9 18h6l-1.5-7c1.2-.7 2-2 2-3.5A3.5 3.5 0 0 0 12 4z" />
-          <path d="M5 20h14" />
-          <circle cx="12" cy="3" r="1" />
-          <path d="M10 8h4M12 6v4" />
-        </>
-      )}
-      {type === "N" && (
-        <>
-          <path d="M6 20h12M7 18h10l-1-7c0-2-1.5-4-3.5-5-2 0-3 1-3.5 2.5L7 11l2 1-2 3v3z" />
-          <circle cx="13" cy="9" r="0.8" fill="currentColor" />
-        </>
-      )}
-      {type === "Q" && (
-        <>
-          <path d="M5 20h14M6 18h12l1.5-8-3.5 2.5L12 7l-4 5.5L4.5 10 6 18z" />
-          <circle cx="4.5" cy="9" r="1" fill="currentColor" />
-          <circle cx="12" cy="6" r="1" fill="currentColor" />
-          <circle cx="19.5" cy="9" r="1" fill="currentColor" />
-        </>
-      )}
-      {type === "K" && (
-        <>
-          <path d="M5 20h14M7 18h10l-1-6.5-2 1.5-2-2-2 2-2-1.5L7 18z" />
-          <path d="M12 3v5M9.5 5.5h5" />
-        </>
-      )}
+      <ChessPieceGlyph type={type} stroke={stroke} />
     </svg>
   );
 }

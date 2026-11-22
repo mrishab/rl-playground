@@ -15,7 +15,11 @@ export function GameTrainButtons({ onTrain, disabled }: Props) {
         className="h-8 text-xs font-mono gap-1"
         disabled={disabled}
         onClick={() => onTrain(50)}
-        title={disabled ? "RL training disabled in Search mode" : undefined}
+        title={
+          disabled
+            ? "RL training disabled in Search mode"
+            : "Train agent for 50 episodes in batch"
+        }
       >
         <Zap className="h-3.5 w-3.5 text-warning" /> Train 50
       </Button>
@@ -25,7 +29,11 @@ export function GameTrainButtons({ onTrain, disabled }: Props) {
         className="h-8 text-xs font-mono gap-1"
         disabled={disabled}
         onClick={() => onTrain(200)}
-        title={disabled ? "RL training disabled in Search mode" : undefined}
+        title={
+          disabled
+            ? "RL training disabled in Search mode"
+            : "Train agent for 200 episodes in batch"
+        }
       >
         <Zap className="h-3.5 w-3.5 text-warning" /> Train 200
       </Button>

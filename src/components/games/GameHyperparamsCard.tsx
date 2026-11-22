@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { GameAlgoToggle } from "./GameAlgoToggle";
+import { GameHyperparamsSliders } from "./GameHyperparamsSliders";
 import type { ControllerMode, GameHyperparameters } from "@/lib/games/types";
 
 type Props = {
@@ -31,48 +31,7 @@ export function GameHyperparamsCard({
             algorithm={params.algorithm}
             onSelect={(algo) => onChange({ algorithm: algo })}
           />
-
-          <div className="flex items-center gap-2 min-w-[130px]">
-            <span className="text-muted-foreground font-mono">
-              α {params.learningRate.toFixed(2)}
-            </span>
-            <Slider
-              min={0.05}
-              max={0.8}
-              step={0.05}
-              value={[params.learningRate]}
-              onValueChange={([val]) => onChange({ learningRate: val })}
-              className="w-16"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 min-w-[130px]">
-            <span className="text-muted-foreground font-mono">
-              γ {params.discountFactor.toFixed(2)}
-            </span>
-            <Slider
-              min={0.0}
-              max={0.99}
-              step={0.05}
-              value={[params.discountFactor]}
-              onValueChange={([val]) => onChange({ discountFactor: val })}
-              className="w-16"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 min-w-[130px]">
-            <span className="text-muted-foreground font-mono">
-              ε {params.explorationRate.toFixed(2)}
-            </span>
-            <Slider
-              min={0.01}
-              max={0.5}
-              step={0.02}
-              value={[params.explorationRate]}
-              onValueChange={([val]) => onChange({ explorationRate: val })}
-              className="w-16"
-            />
-          </div>
+          <GameHyperparamsSliders params={params} onChange={onChange} />
         </CardContent>
       )}
     </Card>

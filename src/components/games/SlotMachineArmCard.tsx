@@ -5,12 +5,18 @@ interface Props {
   lastArm: number;
 }
 
+function formatVal(val: number): string {
+  if (Math.abs(val) < 0.005) return "$0.00";
+  return `${val > 0 ? "+" : ""}$${val.toFixed(2)}`;
+}
+
 export function SlotMachineArmCard({ machines, lastArm }: Props) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
       {machines.map((m) => {
         const isSelected = lastArm === m.id;
         const winPct = m.pulls > 0 ? Math.round((m.wins / m.pulls) * 100) : 0;
+        const netEV = m.trueEV - 1.0;
         return (
           <div
             key={m.id}
@@ -36,8 +42,12 @@ export function SlotMachineArmCard({ machines, lastArm }: Props) {
               <span>Win: {winPct}%</span>
             </div>
             <div className="text-[10px] flex justify-between font-mono pt-0.5 border-t border-border/30">
-              <span className="text-primary">Q̂: ${m.estimatedQ}</span>
-              <span className="text-success">EV: ${m.trueEV}</span>
+              <span className="text-primary" title="Learned Net Profit Q-value">
+                Q̂: {formatVal(m.estimatedQ)}
+              </span>
+              <span className="text-success" title="True Net Profit EV">
+                EV: {formatVal(netEV)}
+              </span>
             </div>
           </div>
         );

@@ -5,6 +5,7 @@ import { GameControlsRow } from "./GameControlsRow";
 import { GameMetricsRow } from "./GameMetricsRow";
 import { GameActiveDisplay } from "./GameActiveDisplay";
 import { GameHyperparamsCard } from "./GameHyperparamsCard";
+import { GamesOnboardingBanner } from "./GamesOnboardingBanner";
 import { useGamesPage } from "./useGamesPage";
 
 export function GamesPage() {
@@ -13,6 +14,7 @@ export function GamesPage() {
   return (
     <PageLayout icon={Gamepad2} title="RL Games & Environments">
       <div className="space-y-3 max-w-4xl mx-auto w-full">
+        <GamesOnboardingBanner />
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <GameTabBar activeGame={p.activeGame} onSelect={p.setActiveGame} />
         </div>

@@ -151,9 +151,9 @@ export class ContinuousCarEngine {
       y: startY,
       angle: startAngle,
       speed: 2.6,
-      sensorLeft: 22.5,
-      sensorRight: 22.5,
-      sensorForward: 60,
+      sensorLeft: 0,
+      sensorRight: 0,
+      sensorForward: 0,
       steering: 0,
       throttle: 0.2,
       isBoosting: false,
@@ -230,7 +230,8 @@ export class ContinuousCarEngine {
   raycastToWalls(x: number, y: number, rayAngle: number, maxDist = 80): number {
     const dx = Math.cos(rayAngle);
     const dy = Math.sin(rayAngle);
-    const stepSize = 1.5;
+    const stepSize = 1.0;
+    const villainRadius = 7.5;
 
     for (let dist = 1.0; dist < maxDist; dist += stepSize) {
       const px = x + dx * dist;
@@ -239,6 +240,14 @@ export class ContinuousCarEngine {
 
       if (dCenter <= this.innerRadius || dCenter >= this.outerRadius) {
         return dist;
+      }
+
+      if (this.state && this.state.villains) {
+        for (const v of this.state.villains) {
+          if (Math.hypot(px - v.x, py - v.y) <= villainRadius) {
+            return dist;
+          }
+        }
       }
     }
     return maxDist;

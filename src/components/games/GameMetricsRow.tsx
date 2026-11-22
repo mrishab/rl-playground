@@ -7,16 +7,32 @@ type Props = {
 
 export function GameMetricsRow({ metrics }: Props) {
   const items = [
-    { label: "Win Rate", value: `${metrics.winRate.toFixed(0)}%` },
-    { label: "Score", value: `${metrics.score}` },
-    { label: "Episodes", value: `${metrics.episodes}` },
-    { label: "Q-States", value: `${metrics.qTableSize}` },
+    {
+      label: "Win Rate",
+      value: `${metrics.winRate.toFixed(0)}%`,
+      title: "Percentage of completed episodes ending in victory",
+    },
+    {
+      label: "Score",
+      value: `${metrics.score}`,
+      title: "Current environment score or balance",
+    },
+    {
+      label: "Episodes",
+      value: `${metrics.episodes}`,
+      title: "Total completed episodes",
+    },
+    {
+      label: "Q-States",
+      value: `${metrics.qTableSize}`,
+      title: "Number of unique states learned in the Q-table",
+    },
   ];
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-      {items.map(({ label, value }) => (
-        <Card key={label} className="p-3">
+      {items.map(({ label, value, title }) => (
+        <Card key={label} className="p-3" title={title}>
           <CardContent className="p-0 space-y-0.5">
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
               {label}
