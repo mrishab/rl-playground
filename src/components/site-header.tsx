@@ -4,6 +4,8 @@ import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { NavLinksDesktop } from "./site-header/NavLinksDesktop";
 import { NavLinksMobile } from "./site-header/NavLinksMobile";
+import { AuthorLink, CreatorButton } from "./site-header/AuthorLink";
+import { SponsorButton } from "./site-header/SponsorButton";
 
 const HEADER_CLS = cn(
   "sticky top-0 z-40 flex w-full flex-col border-b",
@@ -30,7 +32,9 @@ export function SiteHeader() {
           </span>
         </Link>
         <NavLinksDesktop pathname={pathname} />
-        <div className="ml-auto flex items-center gap-1 shrink-0">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <AuthorLink />
+          <SponsorButton />
           <ThemeToggle />
         </div>
       </div>
@@ -38,3 +42,5 @@ export function SiteHeader() {
     </header>
   );
 }
+
+export { AuthorLink, CreatorButton, SponsorButton };

@@ -22,6 +22,7 @@ const testFiles = [
   "gamesContinuousCar.test.ts",
   "gamesSearchIsolation.test.ts",
   "renderCheck.test.ts",
+  "feedbackAndHeader.test.ts",
 ].map((f) => path.resolve(__dirname, f));
 
 let allPassed = true;
